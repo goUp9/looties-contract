@@ -28,3 +28,21 @@ pub struct UpdateEscrow<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
+
+#[derive(Accounts)]
+#[instruction(deposit_amount: u64)]
+pub struct DepositSOL<'info> {
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+    #[account(
+        mut,
+        constraint = initializer_deposit_token_account.amount >= deposit_amount
+    )]
+    pub initializer_deposit_token_account: InterfaceAccount<'info, TokenAccount>,
+    // Escrow account
+    #[account(mut)]
+    pub escrow_account: Account<'info, EscrowAccount>,
+    // system
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+}

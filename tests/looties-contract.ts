@@ -4,6 +4,7 @@ import * as metaplex from "@metaplex/js";
 import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
 import { LootiesContract } from "../target/types/looties_contract";
+import { assert } from "chai";
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -19,18 +20,60 @@ describe("looties-contract", () => {
   
   const program = anchor.workspace.LootiesContract as Program<LootiesContract>;
   
-  // type Reward = program.idl.types[0];
-
   // Constant accounts.
-  const payer = Keypair.generate();
-  const mintAuthority = Keypair.generate();
-  const escrowAccount = Keypair.generate();
+  const wallet = provider.wallet as anchor.Wallet;
+  const payer = wallet.payer;
+  const authority = wallet.publicKey;
+  const escrowAccount1 = Keypair.generate();
+  const escrowAccount2 = Keypair.generate();
+  const otherAdmin = Keypair.generate();
 
   // Uninitialized constant accounts.
   let metadata: PublicKey = null;
   let mintA: Token = null;
-  let initializerTokenAccountA: PublicKey = null;
+  let initializerTokenAccount: PublicKey = null;
   let nftMintClient: Token = null;
+
+  it("Creates an NFT mint", async () => {
+    return;
+    // Create the mint.
+    nftMintClient = await Token.createMint(
+      provider.connection,
+      payer,
+      authority,
+      null,
+      6,
+      TOKEN_PROGRAM_ID
+    );
+
+    // Create the metadata.
+    const [_metadata] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        nftMintClient.publicKey.toBuffer(),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+    metadata = _metadata;
+    const tx = new CreateMetadata(
+      { feePayer: authority },
+      {
+        metadata,
+        metadataData: new MetadataDataData({
+          name: "test-nft",
+          symbol: "TEST",
+          uri: "https://nothing.com",
+          sellerFeeBasisPoints: 1,
+          creators: null,
+        }),
+        updateAuthority: authority,
+        mint: nftMintClient.publicKey,
+        mintAuthority: authority,
+      }
+    );
+    await provider.sendAndConfirm(tx);
+  });
   
   it("Initialise escrow state", async () => {
     // Airdropping tokens to a payer.
@@ -45,59 +88,18 @@ describe("looties-contract", () => {
     mintA = await Token.createMint(
       provider.connection,
       payer,
-      mintAuthority.publicKey,
+      authority,
       null,
       0,
       TOKEN_PROGRAM_ID
     );
 
-    initializerTokenAccountA = await mintA.createAccount(
-      provider.wallet.publicKey
+    initializerTokenAccount = await mintA.createAccount(
+      authority
     );
   });
 
-  // it("Creates an NFT mint", async () => {
-  //   // Create the mint.
-  //   nftMintClient = await Token.createMint(
-  //     provider.connection,
-  //     payer,
-  //     payer.publicKey,
-  //     null,
-  //     6,
-  //     TOKEN_PROGRAM_ID,
-  //   );
-
-  //   // Create the metadata.
-  //   const [_metadata] = await PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from("metadata"),
-  //       TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-  //       nftMintClient.publicKey.toBuffer(),
-  //     ],
-  //     TOKEN_METADATA_PROGRAM_ID
-  //   );
-  //   metadata = _metadata;
-  //   const tx = new CreateMetadata(
-  //     { feePayer: payer.publicKey },
-  //     {
-  //       metadata,
-  //       metadataData: new MetadataDataData({
-  //         name: "test-nft",
-  //         symbol: "TEST",
-  //         uri: "https://nothing.com",
-  //         sellerFeeBasisPoints: 1,
-  //         creators: null,
-  //       }),
-  //       updateAuthority: payer.publicKey,
-  //       mint: nftMintClient.publicKey,
-  //       mintAuthority: payer.publicKey,
-  //     }
-  //   );
-  //   await provider.sendAndConfirm(tx);
-  // });
-
-  it("Initialize escrow", async () => {
-
+  it("Initialize escrow1", async () => {
     let rewards = [
       {
         name: "Reward 1",
@@ -105,7 +107,7 @@ describe("looties-contract", () => {
         imageUrl: "Image url 1",
         rewardType: 0,
         key: payer.publicKey,
-        chance: 50000,
+        chance: 50 * 10 ** 3,
         price: 0,
         prizes: [],
       },
@@ -115,38 +117,154 @@ describe("looties-contract", () => {
         imageUrl: "Image url 2",
         rewardType: 1,
         key: payer.publicKey,
-        chance: 50000,
+        chance: 50 * 10 ** 3,
         price: 1000000000, // 1 SOL
         prizes: [],
       },
     ];
 
-    // let balance = await provider.connection.getAccountInfo(provider.wallet.publicKey);
-    // console.log(balance);
-
     await program.rpc.initializeEscrow(
       "firstBox",
       "this is test box",
-      1000,
-      "https:/imaga_url",
+      2000000000,  // 2 SOL
+      "https://imaga_url",
       rewards,
       {
         accounts: {
-          initializer: provider.wallet.publicKey,
-          initializerReceiveTokenAccount: initializerTokenAccountA,
-          escrowAccount: escrowAccount.publicKey,
+          initializer: authority,
+          initializerReceiveTokenAccount: initializerTokenAccount,
+          escrowAccount: escrowAccount1.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
-        signers: [escrowAccount],
+        signers: [escrowAccount1],
       }
     );
 
     // balance = await provider.connection.getAccountInfo(escrowAccount.publicKey);
     // console.log(balance);
 
-    let escrow = await program.account.escrowAccount.fetch(escrowAccount.publicKey);
-    console.log(escrow);
+    let escrow = await program.account.escrowAccount.fetch(escrowAccount1.publicKey);
+
+    assert.ok(escrow.name === "firstBox");
+    assert.ok(escrow.description === "this is test box");
+    assert.ok(escrow.price === 2000000000);
+    assert.ok(escrow.imageUrl === "https://imaga_url");
+    assert.ok(escrow.rewards.length === 2);
+  });
+
+  it("Initialize escrow2", async () => {
+    let rewards = [
+      {
+        name: "Reward 1",
+        description: "Description 1",
+        imageUrl: "Image url 1",
+        rewardType: 0,
+        key: payer.publicKey,
+        chance: 100 * 10 ** 3,
+        price: 0,
+        prizes: [],
+      }
+    ];
+
+    await program.rpc.initializeEscrow(
+      "second",
+      "this is test box",
+      0, 
+      "https://imaga_url",
+      rewards,
+      {
+        accounts: {
+          initializer: authority,
+          initializerReceiveTokenAccount: initializerTokenAccount,
+          escrowAccount: escrowAccount2.publicKey,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+        signers: [escrowAccount2],
+      }
+    );
+
+    let escrow = await program.account.escrowAccount.fetch(escrowAccount2.publicKey);
+
+    assert.ok(escrow.name === "second");
+    assert.ok(escrow.description === "this is test box");
+    assert.ok(escrow.price === 0);
+    assert.ok(escrow.imageUrl === "https://imaga_url");
+    assert.ok(escrow.rewards.length === 1);
+  });
+
+  
+  it("Update escrow2", async () => {
+    let rewards = [
+      {
+        name: "Reward 1",
+        description: "Description 1",
+        imageUrl: "Image url 1",
+        rewardType: 1,
+        key: payer.publicKey,
+        chance: 25 * 10 ** 3,
+        price: 2 * 10 ** 9,
+        prizes: [],
+      },
+      {
+        name: "Reward 1",
+        description: "Description 1",
+        imageUrl: "Image url 1",
+        rewardType: 1,
+        key: payer.publicKey,
+        chance: 25 * 10 ** 3,
+        price: 10 ** 9,
+        prizes: [],
+      },
+      {
+        name: "Reward 1",
+        description: "Description 1",
+        imageUrl: "Image url 1",
+        rewardType: 1,
+        key: payer.publicKey,
+        chance: 25 * 10 ** 3,
+        price: 5 * 10 ** 8,
+        prizes: [],
+      },
+      {
+        name: "Reward 1",
+        description: "Description 1",
+        imageUrl: "Image url 1",
+        rewardType: 1,
+        key: payer.publicKey,
+        chance: 25 * 10 ** 3,
+        price: 10 ** 8,
+        prizes: [],
+      }
+    ];
+
+    await program.rpc.updateEscrow(
+      "second",
+      "this is test box",
+      10 ** 9,  // 1 SOL
+      "https://imaga_url",
+      rewards,
+      {
+        accounts: {
+          initializer: authority,
+          initializerReceiveTokenAccount: initializerTokenAccount,
+          escrowAccount: escrowAccount2.publicKey,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+        signers: [],
+      }
+    );
+
+    let escrow = await program.account.escrowAccount.fetch(escrowAccount2.publicKey);
+
+    assert.ok(escrow.name === "second");
+    assert.ok(escrow.description === "this is test box");
+    assert.ok(escrow.price === 1000000000);
+    assert.ok(escrow.imageUrl === "https://imaga_url");
+    assert.ok(escrow.rewards.length === 4);
   });
 });
