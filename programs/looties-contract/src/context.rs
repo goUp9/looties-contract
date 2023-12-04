@@ -15,3 +15,16 @@ pub struct InitializeEscrow<'info> {
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
+
+#[derive(Accounts)]
+pub struct UpdateEscrow<'info> {
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+    pub initializer_receive_token_account: InterfaceAccount<'info, TokenAccount>,
+    // Escrow account
+    #[account(mut)]
+    pub escrow_account: Account<'info, EscrowAccount>,
+    // system
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+}

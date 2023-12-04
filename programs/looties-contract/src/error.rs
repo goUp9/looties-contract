@@ -6,7 +6,10 @@ pub enum EscrowError {
     /// Not Rent Exempt
     #[msg("Not Rent Exempt")]
     NotRentExempt,
-    /// Not Rent Exempt
+    /// Chance Sum Invalid
     #[msg("Chance sum must be 100000")]
     ChanceSumInvalid,
+    /// Access Denied
+    #[msg("Access Denied")]
+    AccessDenied,
 }

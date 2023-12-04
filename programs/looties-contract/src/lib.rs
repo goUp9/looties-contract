@@ -53,4 +53,41 @@ pub mod looties_contract {
 
         Ok(())
     }
+
+    pub fn update_escrow(
+        ctx: Context<UpdateEscrow>,
+        name: String,
+        description: String,
+        price: u32,
+        image_url: String,
+        rewards: Vec<Reward>,
+    ) -> Result<()> {
+        if ctx.accounts.escrow_account.initializer_key != *ctx.accounts.initializer.key {
+            return err!(EscrowError::AccessDenied);
+        }
+
+        let mut chance_sum = 0;
+        for reward in rewards.iter() {
+            chance_sum += reward.chance;
+        }
+
+        if chance_sum != 100_000 {
+            return err!(EscrowError::ChanceSumInvalid);
+        }
+
+        ctx.accounts
+            .escrow_account
+            .initializer_receive_token_account = *ctx
+            .accounts
+            .initializer_receive_token_account
+            .to_account_info()
+            .key;
+        ctx.accounts.escrow_account.name = name;
+        ctx.accounts.escrow_account.description = description;
+        ctx.accounts.escrow_account.price = price;
+        ctx.accounts.escrow_account.image_url = image_url;
+        ctx.accounts.escrow_account.rewards = rewards;
+
+        Ok(())
+    }
 }
