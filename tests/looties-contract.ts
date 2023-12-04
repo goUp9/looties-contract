@@ -26,12 +26,13 @@ describe("looties-contract", () => {
   const authority = wallet.publicKey;
   const escrowAccount1 = Keypair.generate();
   const escrowAccount2 = Keypair.generate();
-  const otherAdmin = Keypair.generate();
 
   // Uninitialized constant accounts.
   let metadata: PublicKey = null;
   let mintA: Token = null;
-  let initializerTokenAccount: PublicKey = null;
+  let pdaAssociateTokenAccount1: PublicKey = null;
+  let pdaAssociateTokenAccount2: PublicKey = null;
+  let initializerReceiveTokenAccount: PublicKey = null;
   let nftMintClient: Token = null;
 
   it("Creates an NFT mint", async () => {
@@ -94,7 +95,15 @@ describe("looties-contract", () => {
       TOKEN_PROGRAM_ID
     );
 
-    initializerTokenAccount = await mintA.createAccount(
+    pdaAssociateTokenAccount1 = await mintA.createAccount(
+      authority
+    );
+
+    pdaAssociateTokenAccount2 = await mintA.createAccount(
+      authority
+    );
+
+    initializerReceiveTokenAccount = await mintA.createAccount(
       authority
     );
   });
@@ -108,7 +117,7 @@ describe("looties-contract", () => {
         rewardType: 0,
         key: payer.publicKey,
         chance: 50 * 10 ** 3,
-        price: 0,
+        price: new anchor.BN(0),
         prizes: [],
       },
       {
@@ -118,7 +127,7 @@ describe("looties-contract", () => {
         rewardType: 1,
         key: payer.publicKey,
         chance: 50 * 10 ** 3,
-        price: 1000000000, // 1 SOL
+        price: new anchor.BN(10 ** 9), // 1 SOL
         prizes: [],
       },
     ];
@@ -126,13 +135,14 @@ describe("looties-contract", () => {
     await program.rpc.initializeEscrow(
       "firstBox",
       "this is test box",
-      2000000000,  // 2 SOL
+      new anchor.BN(2 * 10 ** 9),  // 2 SOL
       "https://imaga_url",
       rewards,
       {
         accounts: {
           initializer: authority,
-          initializerReceiveTokenAccount: initializerTokenAccount,
+          pdaAssociateTokenAccount: pdaAssociateTokenAccount1,
+          initializerReceiveTokenAccount: initializerReceiveTokenAccount,
           escrowAccount: escrowAccount1.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -149,7 +159,7 @@ describe("looties-contract", () => {
 
     assert.ok(escrow.name === "firstBox");
     assert.ok(escrow.description === "this is test box");
-    assert.ok(escrow.price === 2000000000);
+    assert.ok(escrow.price.toString() === new anchor.BN("2000000000").toString());
     assert.ok(escrow.imageUrl === "https://imaga_url");
     assert.ok(escrow.rewards.length === 2);
   });
@@ -163,7 +173,7 @@ describe("looties-contract", () => {
         rewardType: 0,
         key: payer.publicKey,
         chance: 100 * 10 ** 3,
-        price: 0,
+        price: new anchor.BN(0),
         prizes: [],
       }
     ];
@@ -171,13 +181,14 @@ describe("looties-contract", () => {
     await program.rpc.initializeEscrow(
       "second",
       "this is test box",
-      0, 
+      new anchor.BN(0), 
       "https://imaga_url",
       rewards,
       {
         accounts: {
           initializer: authority,
-          initializerReceiveTokenAccount: initializerTokenAccount,
+          pdaAssociateTokenAccount: pdaAssociateTokenAccount2,
+          initializerReceiveTokenAccount: initializerReceiveTokenAccount,
           escrowAccount: escrowAccount2.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -191,11 +202,10 @@ describe("looties-contract", () => {
 
     assert.ok(escrow.name === "second");
     assert.ok(escrow.description === "this is test box");
-    assert.ok(escrow.price === 0);
+    assert.ok(escrow.price.toString() === new anchor.BN(0).toString());
     assert.ok(escrow.imageUrl === "https://imaga_url");
     assert.ok(escrow.rewards.length === 1);
   });
-
   
   it("Update escrow2", async () => {
     let rewards = [
@@ -206,7 +216,7 @@ describe("looties-contract", () => {
         rewardType: 1,
         key: payer.publicKey,
         chance: 25 * 10 ** 3,
-        price: 2 * 10 ** 9,
+        price: new anchor.BN(2 * 10 ** 9),
         prizes: [],
       },
       {
@@ -216,7 +226,7 @@ describe("looties-contract", () => {
         rewardType: 1,
         key: payer.publicKey,
         chance: 25 * 10 ** 3,
-        price: 10 ** 9,
+        price: new anchor.BN(10 ** 9),
         prizes: [],
       },
       {
@@ -226,7 +236,7 @@ describe("looties-contract", () => {
         rewardType: 1,
         key: payer.publicKey,
         chance: 25 * 10 ** 3,
-        price: 5 * 10 ** 8,
+        price: new anchor.BN(5 * 10 ** 8),
         prizes: [],
       },
       {
@@ -236,7 +246,7 @@ describe("looties-contract", () => {
         rewardType: 1,
         key: payer.publicKey,
         chance: 25 * 10 ** 3,
-        price: 10 ** 8,
+        price: new anchor.BN(10 ** 8),
         prizes: [],
       }
     ];
@@ -244,13 +254,13 @@ describe("looties-contract", () => {
     await program.rpc.updateEscrow(
       "second",
       "this is test box",
-      10 ** 9,  // 1 SOL
+      new anchor.BN(10 ** 9),  // 1 SOL
       "https://imaga_url",
       rewards,
       {
         accounts: {
           initializer: authority,
-          initializerReceiveTokenAccount: initializerTokenAccount,
+          initializerReceiveTokenAccount: initializerReceiveTokenAccount,
           escrowAccount: escrowAccount2.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -263,8 +273,22 @@ describe("looties-contract", () => {
 
     assert.ok(escrow.name === "second");
     assert.ok(escrow.description === "this is test box");
-    assert.ok(escrow.price === 1000000000);
+    assert.ok(escrow.price.toString() === new anchor.BN(10 ** 9).toString());
     assert.ok(escrow.imageUrl === "https://imaga_url");
     assert.ok(escrow.rewards.length === 4);
+  });
+
+  it("Deposit SOL", async () => {
+    await program.rpc.depositSol(
+      new anchor.BN(10 ** 9),
+      {
+        accounts: {
+          from: authority,
+          to: pdaAssociateTokenAccount1,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [],
+      }
+    );
   });
 });

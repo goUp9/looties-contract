@@ -6,6 +6,8 @@ pub struct EscrowAccount {
     // 32
     pub initializer_key: Pubkey,
     // 32
+    pub pda_associate_token_account: Pubkey,
+    // 32
     pub initializer_receive_token_account: Pubkey,
     // 4 + 50
     #[max_len(50)]
@@ -13,8 +15,8 @@ pub struct EscrowAccount {
     // 4 + 200
     #[max_len(200)]
     pub description: String,
-    // 4
-    pub price: u32,
+    // 8
+    pub price: u64,
     // 4 + 200
     #[max_len(200)]
     pub image_url: String,
@@ -40,8 +42,8 @@ pub struct Reward {
     pub key: Pubkey,
     // 4
     pub chance: u32, // ${%} * 100_000
-    // 4
-    pub price: u32,
+    // 8
+    pub price: u64,
     // 4 + 20 * 32
     #[max_len(10)]
     pub prizes: Vec<Pubkey>,
