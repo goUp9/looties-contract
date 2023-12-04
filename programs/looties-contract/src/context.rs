@@ -8,7 +8,7 @@ pub struct InitializeEscrow<'info> {
     pub initializer: Signer<'info>,
     pub initializer_receive_token_account: InterfaceAccount<'info, TokenAccount>,
     // Escrow account
-    #[account(init, payer = initializer, space = 8 + EscrowAccount::LEN)]
+    #[account(init, payer = initializer, space = 8 + EscrowAccount::INIT_SPACE)]
     pub escrow_account: Account<'info, EscrowAccount>,
     // system
     pub system_program: Program<'info, System>,

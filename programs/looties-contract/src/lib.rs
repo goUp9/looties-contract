@@ -54,4 +54,3 @@ pub mod looties_contract {
         Ok(())
     }
 }
-
