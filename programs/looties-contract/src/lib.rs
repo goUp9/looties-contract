@@ -41,6 +41,16 @@ pub mod looties_contract {
         Ok(())
     }
 
+    /**
+     * Create new box
+     *
+     * @param - random address to use as seed
+     *          name of box
+     *          description of box
+     *          image url of box
+     *          price in sol to open the box
+     *          rewards
+     */
     pub fn init_box<'info>(
         ctx: Context<'_, '_, '_, 'info, InitBox<'info>>,
         _rand: Pubkey,
@@ -70,5 +80,41 @@ pub mod looties_contract {
         box_pool.rewards = rewards;
 
         global_pool.add_box(box_pool.key())
+    }
+
+    /**
+     * Update box
+     *
+     * @param - name of box
+     *          description of box
+     *          image url of box
+     *          price in sol to open the box
+     *          rewards
+     */
+    pub fn update_box<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateBox<'info>>,
+        name: String,
+        description: String,
+        image_url: String,
+        price_in_sol: u64,
+        rewards: Vec<Reward>,
+    ) -> Result<()> {
+        let box_pool = &mut ctx.accounts.box_pool;
+
+        require!(rewards.len() <= MAX_REWARD_IN_BOX, GameError::ExceedMaxReward);
+
+        let mut sum: u16 = 0;
+        for reward in rewards.iter() {
+            sum += reward.chance
+        }
+        require!(sum == CHANCE_SUM, GameError::ChanceSumInvalid);
+
+        box_pool.name = name;
+        box_pool.description = description;
+        box_pool.image_url = image_url;
+        box_pool.price_in_sol = price_in_sol;
+        box_pool.rewards = rewards;
+
+        Ok(())
     }
 }

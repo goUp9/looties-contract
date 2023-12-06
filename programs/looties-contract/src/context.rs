@@ -20,7 +20,6 @@ pub struct Initialize<'info> {
 
     // system
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -78,6 +77,28 @@ pub struct InitBox<'info> {
 
     // system
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateBox<'info> {
+    // Only admin can update box
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(mut)]
+    pub box_pool: Account<'info, BoxPool>,
+
+    // system
+    pub token_program: Program<'info, Token>,
 }
