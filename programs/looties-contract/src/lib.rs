@@ -121,9 +121,9 @@ pub mod looties_contract {
     }
 
     /**
-     * Update box
+     * Remove box
      *
-     * @remainingAccount
+     * @remainingAccount - NFT(global_pool's ATA, admin's ATA) list included in box
      */
     pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
@@ -134,8 +134,12 @@ pub mod looties_contract {
 
         //  Transfer NFTs to admin wallet
         let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+
         let mut idx = 0;
         let nfts = &prize_pool.nfts;
+
+        require!(remaining_accounts.len() == nfts.len() * 2, GameError::RemainingAccountCountDismatch);
+
         for nft in nfts {
             let src_ata = spl_associated_token_account::get_associated_token_address(
                 &global_pool.key(),
@@ -175,6 +179,73 @@ pub mod looties_contract {
                 ),
                 1,
             )?;
+
+            idx += 2;
+        }
+
+        Ok(())
+    }
+
+    /**
+     * Deposit NFTs
+     *
+     * @param            - list of nft collection address
+     *                   - list of nft mint address
+     * 
+     * @remainingAccount - NFT(admin's ATA, global_pool's ATA) list included in box
+     * 
+     */
+    pub fn deposit_nfts<'info>(
+        ctx: Context<'_, '_, '_, 'info, DepositNfts<'info>>,
+        collection_addr: Vec<Pubkey>,
+        mint_addr: Vec<Pubkey>,
+    ) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
+        let prize_pool = &mut ctx.accounts.prize_pool;
+        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+
+        let len = collection_addr.len();
+        require!(remaining_accounts.len() == len * 2, GameError::RemainingAccountCountDismatch);
+        require!(mint_addr.len() == len, GameError::ArgumentInvalid);
+        
+        //  Transfer NFTs to program ATA
+        let mut idx = 0;
+        for i in 0..len {
+            let collection = collection_addr[i];
+            let nft = mint_addr[i];
+
+            let src_ata = spl_associated_token_account::get_associated_token_address(
+                &ctx.accounts.admin.key(),
+                &nft,
+            );
+            require!(
+                remaining_accounts[idx].key().eq(&src_ata),
+                GameError::SrcAtaDismatch
+            );
+
+            let dest_ata = spl_associated_token_account::get_associated_token_address(
+                &global_pool.key(),
+                &nft,
+            );
+            require!(
+                remaining_accounts[idx + 1].key().eq(&dest_ata),
+                GameError::DestAtaDismatch
+            );
+
+            //  Transfer NFT
+            let token_program = &mut &ctx.accounts.token_program;
+            let cpi_accounts = Transfer {
+                from: remaining_accounts[idx].clone(),
+                to: remaining_accounts[idx + 1].clone(),
+                authority: ctx.accounts.admin.to_account_info().clone(),
+            };
+            token::transfer(
+                CpiContext::new(token_program.clone().to_account_info(), cpi_accounts),
+                1,
+            )?;
+
+            prize_pool.nfts.push(NftInfo::new(collection, nft));
 
             idx += 2;
         }

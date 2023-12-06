@@ -84,3 +84,12 @@ pub struct NftInfo {
     pub collection_address: Pubkey,         // 32
     pub mint_info: Pubkey,                  // 32
 }
+
+impl NftInfo {
+    pub fn new(collection_address: Pubkey, mint_info: Pubkey) -> Self {
+        Self {
+            collection_address,
+            mint_info,
+        }
+    }
+}
