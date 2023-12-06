@@ -1204,6 +1204,8 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "bytemuck",
+ "spl-token",
 ]
 
 [[package]]

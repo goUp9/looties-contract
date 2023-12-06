@@ -1,10 +1,11 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import * as metaplex from "@metaplex/js";
-import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
-import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
+import { AccountLayout, TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram, Transaction, _default } from "@solana/web3.js";
 import { LootiesContract } from "../target/types/looties_contract";
 import { assert } from "chai";
+import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -26,61 +27,34 @@ describe("looties-contract", () => {
   const authority = wallet.publicKey;
   const escrowAccount1 = Keypair.generate();
   const escrowAccount2 = Keypair.generate();
+  const player = Keypair.generate();
+  const escrowAssociateAccount1 = Keypair.generate();
+  const escrowAssociateAccount2 = Keypair.generate();
+  const ESCROW_PDA_SEED = Buffer.from("escrow_pda_seed");
+  const ESCROW_TOKEN_PDA_SEED = Buffer.from("escrow_token_pda_seed");
+  const ESCROW_NFT_PDA_SEED = Buffer.from("escrow_nft_pda_seed");
 
   // Uninitialized constant accounts.
   let metadata: PublicKey = null;
   let mintA: Token = null;
-  let pdaAssociateTokenAccount1: PublicKey = null;
-  let pdaAssociateTokenAccount2: PublicKey = null;
+  let mintB: Token = null;
   let initializerReceiveTokenAccount: PublicKey = null;
-  let nftMintClient: Token = null;
+  let playerReceiveTokenAccount: PublicKey = null;
 
-  it("Creates an NFT mint", async () => {
-    return;
-    // Create the mint.
-    nftMintClient = await Token.createMint(
-      provider.connection,
-      payer,
-      authority,
-      null,
-      6,
-      TOKEN_PROGRAM_ID
-    );
-
-    // Create the metadata.
-    const [_metadata] = await PublicKey.findProgramAddress(
-      [
-        Buffer.from("metadata"),
-        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-        nftMintClient.publicKey.toBuffer(),
-      ],
-      TOKEN_METADATA_PROGRAM_ID
-    );
-    metadata = _metadata;
-    const tx = new CreateMetadata(
-      { feePayer: authority },
-      {
-        metadata,
-        metadataData: new MetadataDataData({
-          name: "test-nft",
-          symbol: "TEST",
-          uri: "https://nothing.com",
-          sellerFeeBasisPoints: 1,
-          creators: null,
-        }),
-        updateAuthority: authority,
-        mint: nftMintClient.publicKey,
-        mintAuthority: authority,
-      }
-    );
-    await provider.sendAndConfirm(tx);
-  });
-  
   it("Initialise escrow state", async () => {
     // Airdropping tokens to a payer.
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         payer.publicKey,
+        10000000000
+      ),
+      "confirmed"
+    );
+
+    // Airdropping tokens to a player.
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(
+        player.publicKey,
         10000000000
       ),
       "confirmed"
@@ -95,62 +69,147 @@ describe("looties-contract", () => {
       TOKEN_PROGRAM_ID
     );
 
-    pdaAssociateTokenAccount1 = await mintA.createAccount(
-      authority
-    );
-
-    pdaAssociateTokenAccount2 = await mintA.createAccount(
-      authority
+    mintB = await Token.createMint(
+      provider.connection,
+      payer,
+      authority,
+      null,
+      0,
+      TOKEN_PROGRAM_ID
     );
 
     initializerReceiveTokenAccount = await mintA.createAccount(
       authority
+    );
+
+    playerReceiveTokenAccount = await mintA.createAccount(
+      player.publicKey
     );
   });
 
   it("Initialize escrow1", async () => {
     let rewards = [
       {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
+        name: "1 SOL",
+        description: "1 SOL",
+        imageUrl: "https://no_url",
         rewardType: 0,
-        key: payer.publicKey,
-        chance: 50 * 10 ** 3,
-        price: new anchor.BN(0),
-        prizes: [],
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(10 ** 9),
+        mintToken: null,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
       },
       {
-        name: "Reward 2",
-        description: "Description 2",
-        imageUrl: "Image url 2",
+        name: "2 SOL",
+        description: "2 SOL",
+        imageUrl: "https://no_url",
+        rewardType: 0,
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(2 * 10 ** 9),
+        mintToken: null,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
+      },
+      {
+        name: "1 tokenA",
+        description: "1 tokenA",
+        imageUrl: "https://no_url",
         rewardType: 1,
-        key: payer.publicKey,
-        chance: 50 * 10 ** 3,
-        price: new anchor.BN(10 ** 9), // 1 SOL
-        prizes: [],
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(10 ** 9),
+        mintToken: mintA.publicKey,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
+      },
+      {
+        name: "2 tokenA",
+        description: "2 tokenA",
+        imageUrl: "https://no_url",
+        rewardType: 1,
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(20 ** 9),
+        mintToken: mintA.publicKey,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
+      },
+      {
+        name: "1 tokenB",
+        description: "1 tokenB",
+        imageUrl: "https://no_url",
+        rewardType: 1,
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(10 ** 9),
+        mintToken: mintB.publicKey,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
+      },
+      {
+        name: "2 tokenB",
+        description: "2 tokenB",
+        imageUrl: "https://no_url",
+        rewardType: 1,
+        chance: 10 * 10 ** 3,
+        price: new anchor.BN(20 ** 9),
+        mintToken: mintB.publicKey,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
+      },
+      {
+        name: "NFT",
+        description: "NFT",
+        imageUrl: "https://no_url",
+        rewardType: 2,
+        chance: 40 * 10 ** 3,
+        price: new anchor.BN(1),
+        mintToken: null,
+        escrowAssociateTokenAccount: null,
+        prizeAccount: null,
       },
     ];
 
-    await program.rpc.initializeEscrow(
+    let array = [];
+    rewards.forEach((reward) => {
+      if (reward.rewardType == 1) {
+        let [pda,] = anchor.web3.PublicKey.findProgramAddressSync(
+          [
+            ESCROW_TOKEN_PDA_SEED,
+          ],
+          program.programId
+        );
+        // escrow_associate_token_account
+        array.push({ pubkey: pda, isWritable: true, isSigner: false });
+      } else if (reward.rewardType == 2) {
+        let [pda,] = anchor.web3.PublicKey.findProgramAddressSync(
+          [
+            ESCROW_NFT_PDA_SEED,
+            escrowAccount1.publicKey.toBuffer(),
+            // reward.mintToken.toBuffer(),
+          ],
+          program.programId
+        );
+        // prize_account
+        array.push({ pubkey: pda, isWritable: true, isSigner: false });
+      }
+    });
+
+    await program.methods.initializeEscrow(
       "firstBox",
       "this is test box",
       new anchor.BN(2 * 10 ** 9),  // 2 SOL
       "https://imaga_url",
-      rewards,
-      {
-        accounts: {
+      rewards)
+      .accounts({
           initializer: authority,
-          pdaAssociateTokenAccount: pdaAssociateTokenAccount1,
           initializerReceiveTokenAccount: initializerReceiveTokenAccount,
           escrowAccount: escrowAccount1.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
-        },
-        signers: [escrowAccount1],
-      }
-    );
+      })
+      .remainingAccounts(array)
+      .signers([payer, escrowAccount1])
+      .rpc();
 
     // balance = await provider.connection.getAccountInfo(escrowAccount.publicKey);
     // console.log(balance);
@@ -161,134 +220,18 @@ describe("looties-contract", () => {
     assert.ok(escrow.description === "this is test box");
     assert.ok(escrow.price.toString() === new anchor.BN("2000000000").toString());
     assert.ok(escrow.imageUrl === "https://imaga_url");
-    assert.ok(escrow.rewards.length === 2);
-  });
-
-  it("Initialize escrow2", async () => {
-    let rewards = [
-      {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
-        rewardType: 0,
-        key: payer.publicKey,
-        chance: 100 * 10 ** 3,
-        price: new anchor.BN(0),
-        prizes: [],
-      }
-    ];
-
-    await program.rpc.initializeEscrow(
-      "second",
-      "this is test box",
-      new anchor.BN(0), 
-      "https://imaga_url",
-      rewards,
-      {
-        accounts: {
-          initializer: authority,
-          pdaAssociateTokenAccount: pdaAssociateTokenAccount2,
-          initializerReceiveTokenAccount: initializerReceiveTokenAccount,
-          escrowAccount: escrowAccount2.publicKey,
-          systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rent: SYSVAR_RENT_PUBKEY,
-        },
-        signers: [escrowAccount2],
-      }
-    );
-
-    let escrow = await program.account.escrowAccount.fetch(escrowAccount2.publicKey);
-
-    assert.ok(escrow.name === "second");
-    assert.ok(escrow.description === "this is test box");
-    assert.ok(escrow.price.toString() === new anchor.BN(0).toString());
-    assert.ok(escrow.imageUrl === "https://imaga_url");
-    assert.ok(escrow.rewards.length === 1);
-  });
-  
-  it("Update escrow2", async () => {
-    let rewards = [
-      {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
-        rewardType: 1,
-        key: payer.publicKey,
-        chance: 25 * 10 ** 3,
-        price: new anchor.BN(2 * 10 ** 9),
-        prizes: [],
-      },
-      {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
-        rewardType: 1,
-        key: payer.publicKey,
-        chance: 25 * 10 ** 3,
-        price: new anchor.BN(10 ** 9),
-        prizes: [],
-      },
-      {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
-        rewardType: 1,
-        key: payer.publicKey,
-        chance: 25 * 10 ** 3,
-        price: new anchor.BN(5 * 10 ** 8),
-        prizes: [],
-      },
-      {
-        name: "Reward 1",
-        description: "Description 1",
-        imageUrl: "Image url 1",
-        rewardType: 1,
-        key: payer.publicKey,
-        chance: 25 * 10 ** 3,
-        price: new anchor.BN(10 ** 8),
-        prizes: [],
-      }
-    ];
-
-    await program.rpc.updateEscrow(
-      "second",
-      "this is test box",
-      new anchor.BN(10 ** 9),  // 1 SOL
-      "https://imaga_url",
-      rewards,
-      {
-        accounts: {
-          initializer: authority,
-          initializerReceiveTokenAccount: initializerReceiveTokenAccount,
-          escrowAccount: escrowAccount2.publicKey,
-          systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-        signers: [],
-      }
-    );
-
-    let escrow = await program.account.escrowAccount.fetch(escrowAccount2.publicKey);
-
-    assert.ok(escrow.name === "second");
-    assert.ok(escrow.description === "this is test box");
-    assert.ok(escrow.price.toString() === new anchor.BN(10 ** 9).toString());
-    assert.ok(escrow.imageUrl === "https://imaga_url");
-    assert.ok(escrow.rewards.length === 4);
-  });
-
-  it("Deposit SOL", async () => {
-    await program.rpc.depositSol(
-      new anchor.BN(10 ** 9),
-      {
-        accounts: {
-          from: authority,
-          to: pdaAssociateTokenAccount1,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [],
-      }
-    );
+    assert.ok(escrow.rewards.length === rewards.length);
+    assert.ok(escrow.rewards.toString() == rewards.toString());
+    escrow.rewards.forEach((reward, index) => {
+      assert.ok(reward.name === rewards[index].name);
+      assert.ok(reward.description === rewards[index].description);
+      assert.ok(reward.imageUrl === rewards[index].imageUrl);
+      assert.ok(reward.rewardType === rewards[index].rewardType);
+      assert.ok(reward.chance === rewards[index].chance);
+      assert.ok(reward.price.toString() === rewards[index].price.toString());
+      assert.ok(reward.mintToken?.toString() === rewards[index].mintToken?.toString());
+      console.log("reward ", index, "'s escrow_associate_token_account : ", reward.escrowAssociateTokenAccount?.toString())
+      console.log("reward ", index, "'s prize_account : ", reward.prizeAccount?.toString())
+    })
   });
 });
