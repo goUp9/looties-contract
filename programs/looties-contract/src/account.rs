@@ -7,7 +7,7 @@ use crate::{
 #[account]
 #[derive(InitSpace, Default)]
 pub struct GlobalPool {
-    pub admin: Pubkey,                          // 32
+    pub super_admin: Pubkey,                    // 32
 
     #[max_len(MAX_TOKEN_IN_GAME)]
     pub token_address: Vec<Pubkey>,             // 32 * 20
@@ -34,18 +34,23 @@ impl GlobalPool {
 #[account]
 #[derive(InitSpace, Default)]
 pub struct BoxPool {
-    #[max_len(MAX_NAME_LENGTH)]
-    pub name: String,                       // 4 + 25
-    #[max_len(MAX_DESCRIPTION_LENGTH)]
-    pub description: String,                // 4 + 100
-    #[max_len(MAX_IMAGE_URL_LENGTH)]
-    pub image_url: String,                  // 4 + 100
-    pub price_in_sol: u64,                  // 8
+    pub admin: Pubkey,                              // 32
 
-    pub prizes: Pubkey,                     // 32
+    pub sol_amount: u64,                            // 8
+    pub token_amount: [u64; MAX_TOKEN_IN_GAME],     // 8 * 20
+
+    #[max_len(MAX_NAME_LENGTH)]
+    pub name: String,                               // 4 + 25
+    #[max_len(MAX_DESCRIPTION_LENGTH)]
+    pub description: String,                        // 4 + 100
+    #[max_len(MAX_IMAGE_URL_LENGTH)]
+    pub image_url: String,                          // 4 + 100
+    pub price_in_sol: u64,                          // 8
+
+    pub prizes: Pubkey,                             // 32
 
     #[max_len(MAX_REWARD_IN_BOX)]
-    pub rewards: Vec<Reward>,               // 4 + ___ * 20
+    pub rewards: Vec<Reward>,                       // 4 + ___ * 20
 }
 
 #[account]

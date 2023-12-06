@@ -9,6 +9,9 @@ pub enum GameError {
     /// Exceed Max Box
     #[msg("Exceed Max Box")]
     ExceedMaxBox,
+    /// Invalid Super Admin
+    #[msg("Invalid Super Admin")]
+    InvalidSuperAdmin,
     /// Invalid Admin
     #[msg("Invalid Admin")]
     InvalidAdmin,
@@ -54,4 +57,7 @@ pub enum GameError {
     /// NFT collection is empty
     #[msg("NFT collection is empty")]
     NFTNotFound,
+    /// Insufficient Funds
+    #[msg("Insufficient Funds")]
+    InsufficientFunds,
 }

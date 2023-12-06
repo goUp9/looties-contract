@@ -24,22 +24,35 @@ pub mod looties_contract {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
 
-        global_pool.admin = ctx.accounts.admin.key();
+        global_pool.super_admin = ctx.accounts.super_admin.key();
         global_pool.token_count = 0;
 
         Ok(())
     }
 
     /**
-     * Change admin
+     * Change super admin for game
      *
      * @param - new_admin
      */
-    pub fn change_admin(ctx: Context<UpdateGlobal>, new_admin: Pubkey) -> Result<()> {
+    pub fn change_super_admin(ctx: Context<UpdateGlobal>, new_admin: Pubkey) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
 
+        global_pool.super_admin = new_admin;
+
+        Ok(())
+    }
+
+    /**
+     * Change admin for box
+     *
+     * @param - new_admin
+     */
+    pub fn change_admin(ctx: Context<UpdateBox>, new_admin: Pubkey) -> Result<()> {
+        let box_pool = &mut ctx.accounts.box_pool;
+
         // Don't need check admin since it signed the transaction
-        global_pool.admin = new_admin;
+        box_pool.admin = new_admin;
 
         Ok(())
     }
@@ -47,21 +60,23 @@ pub mod looties_contract {
     /**
      * Create new box
      *
-     * @param - random address to use as seed
-     *          name of box
-     *          description of box
-     *          image url of box
-     *          price in sol to open the box
-     *          rewards
+     * @param - admin key
+     *        - name of box
+     *        - description of box
+     *        - image url of box
+     *        - price in sol to open the box
+     *        - rewards
+     *        - random address to use as seed
      */
     pub fn init_box<'info>(
         ctx: Context<'_, '_, '_, 'info, InitBox<'info>>,
-        _rand: Pubkey,
+        admin: Pubkey,
         name: String,
         description: String,
         image_url: String,
         price_in_sol: u64,
         rewards: Vec<Reward>,
+        _rand: Pubkey,
     ) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
         let box_pool = &mut ctx.accounts.box_pool;
@@ -80,6 +95,7 @@ pub mod looties_contract {
         }
         require!(sum == CHANCE_SUM, GameError::ChanceSumInvalid);
 
+        box_pool.admin = admin;
         box_pool.name = name;
         box_pool.description = description;
         box_pool.image_url = image_url;
@@ -129,7 +145,7 @@ pub mod looties_contract {
     /**
      * Remove box
      *
-     * @remainingAccount - NFT's ATA(global_pool's ATA, admin's ATA) list included in box
+     * @remainingAccount - NFT's ATA(global_pool's ATA, box admin's ATA) list included in box
      */
     pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
@@ -157,7 +173,7 @@ pub mod looties_contract {
             );
 
             let dest_ata = spl_associated_token_account::get_associated_token_address(
-                &ctx.accounts.admin.key(),
+                &box_pool.admin.key(),
                 &nft.mint_info,
             );
             require!(
@@ -200,7 +216,7 @@ pub mod looties_contract {
      * @param            - list of nft collection address
      *                   - list of nft mint address
      * 
-     * @remainingAccount - NFT's ATA(admin's ATA, global_pool's ATA) list included in box
+     * @remainingAccount - NFT's ATA(box admin's ATA, global_pool's ATA) list included in box
      * 
      */
     pub fn deposit_nfts<'info>(
@@ -278,7 +294,7 @@ pub mod looties_contract {
      * @remainingAccount - NFT's ATA(global_pool's ATA, admin's ATA) list to withdraw
      */
     pub fn withdraw_nfts<'info>(
-        ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>,
+        ctx: Context<'_, '_, '_, 'info, WithdrawNfts<'info>>,
         nfts: Vec<Pubkey>
     ) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
@@ -347,11 +363,12 @@ pub mod looties_contract {
      */
     pub fn deposit(ctx: Context<Deposit>, sol_amount: u64, token_amount: u64) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
 
-        if !global_pool.token_address.iter().all(|&token_mint| token_mint != ctx.accounts.token_mint.key()) {
-            require!(global_pool.token_count < MAX_TOKEN_IN_GAME as u64, GameError::ExceedMaxToken);
-            global_pool.token_address.push(ctx.accounts.token_mint.key());
-        }
+        let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
+            Some(id) => id,
+            None => return err!(GameError::TokenAddressUnknown),
+        };
 
         msg!("Depositer: {}", ctx.accounts.admin.to_account_info().key());
         msg!(
@@ -367,6 +384,7 @@ pub mod looties_contract {
                 ctx.accounts.system_program.to_account_info(),
                 sol_amount,
             )?;
+            box_pool.sol_amount += sol_amount;
         }
 
         if token_amount > 0 {
@@ -380,6 +398,7 @@ pub mod looties_contract {
                 },
             );
             token::transfer(cpi_ctx, token_amount)?;
+            box_pool.token_amount[id] += token_amount;
         }
 
         Ok(())
@@ -392,6 +411,8 @@ pub mod looties_contract {
      *        - token amount to withdraw
      */
     pub fn withdraw(ctx: Context<Withdraw>, sol_amount: u64, token_amount: u64) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
         msg!("Withdrawer: {}", ctx.accounts.admin.to_account_info().key());
         msg!(
             "Asking to withdraw: {} SOL, {} Token {}",
@@ -403,6 +424,13 @@ pub mod looties_contract {
         let sol_vault_bump = ctx.bumps.sol_vault;
         let token_vault_bump = ctx.bumps.token_vault;
 
+        let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
+            Some(id) => id,
+            None => return err!(GameError::TokenAddressUnknown),
+        };
+        require!(box_pool.sol_amount >= sol_amount, GameError::InsufficientFunds);
+        require!(box_pool.token_amount[id] >= token_amount, GameError::InsufficientFunds);
+
         if sol_amount > 0 {
             sol_transfer_with_signer(
                 ctx.accounts.sol_vault.to_account_info(),
@@ -411,6 +439,7 @@ pub mod looties_contract {
                 &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
                 sol_amount,
             )?;
+            box_pool.sol_amount -= sol_amount;
         }
 
         if token_amount > 0 {
@@ -429,6 +458,7 @@ pub mod looties_contract {
                 &signer,
             );
             token::transfer(cpi_ctx, token_amount)?;
+            box_pool.token_amount[id] -= token_amount;
         }
 
         Ok(())
@@ -514,6 +544,7 @@ pub mod looties_contract {
 
         let sol_vault_bump = ctx.bumps.sol_vault;
 
+        require!(box_pool.sol_amount >= reward_sol, GameError::InsufficientFunds);
         if reward_sol > 0 {
             sol_transfer_with_signer(
                 ctx.accounts.sol_vault.to_account_info(),
@@ -522,10 +553,12 @@ pub mod looties_contract {
                 &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
                 reward_sol,
             )?;
+            box_pool.sol_amount -= reward_sol;
         }
 
         for (idx, &reward_token) in reward_tokens.iter().enumerate() {
             if reward_token > 0 {
+                require!(box_pool.token_amount[idx] >= reward_token, GameError::InsufficientFunds);
                 //  Transfer Token to user from PDA
                 let token_address = global_pool.token_address[idx];
                 let (src_ata, bump) = Pubkey::find_program_address(&[token_address.as_ref()], ctx.program_id);
@@ -557,6 +590,8 @@ pub mod looties_contract {
                     &signer,
                 );
                 token::transfer(cpi_ctx, reward_token)?;
+
+                box_pool.token_amount[idx] -= reward_token;
             }
         }
 

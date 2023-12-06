@@ -9,14 +9,14 @@ use anchor_spl::token::TokenAccount;
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub super_admin: Signer<'info>,
 
     #[account(
         init,
         space = 8 + GlobalPool::INIT_SPACE,
         seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
         bump,
-        payer = admin
+        payer = super_admin
     )]
     pub global_pool: Account<'info, GlobalPool>,
 
@@ -27,12 +27,12 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateGlobal<'info> {
-    // Current admin
+    // Current super admin
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = global_pool.super_admin == *super_admin.key @ GameError::InvalidSuperAdmin
     )]
-    pub admin: Signer<'info>,
+    pub super_admin: Signer<'info>,
 
     #[account(
         mut,
@@ -48,9 +48,9 @@ pub struct InitBox<'info> {
     // Only admin can create box
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = global_pool.super_admin == *super_admin.key @ GameError::InvalidSuperAdmin
     )]
-    pub admin: Signer<'info>,
+    pub super_admin: Signer<'info>,
 
     #[account(
         mut,
@@ -64,7 +64,7 @@ pub struct InitBox<'info> {
         seeds = [_rand.as_ref()],
         bump,
         space = 8 + BoxPool::INIT_SPACE,
-        payer = admin
+        payer = super_admin
     )]
     pub box_pool: Account<'info, BoxPool>,
 
@@ -73,7 +73,7 @@ pub struct InitBox<'info> {
         seeds = [box_pool.key().as_ref()],
         bump,
         space = 8 + PrizePool::INIT_SPACE,
-        payer = admin
+        payer = super_admin
     )]
     pub prize_pool: Account<'info, PrizePool>,
 
@@ -87,9 +87,9 @@ pub struct UpdateBox<'info> {
     // Only admin can update box
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = global_pool.super_admin == *super_admin.key @ GameError::InvalidSuperAdmin
     )]
-    pub admin: Signer<'info>,
+    pub super_admin: Signer<'info>,
 
     #[account(
         mut,
@@ -110,9 +110,9 @@ pub struct RemoveBox<'info> {
     // Only admin can remove box
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = global_pool.super_admin == *super_admin.key @ GameError::InvalidSuperAdmin
     )]
-    pub admin: Signer<'info>,
+    pub super_admin: Signer<'info>,
 
     #[account(
         mut,
@@ -140,7 +140,7 @@ pub struct DepositNfts<'info> {
     // Only admin can deposit nfts
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -170,7 +170,7 @@ pub struct WithdrawNfts<'info> {
     // Only admin can withdraw nfts
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -200,7 +200,7 @@ pub struct Deposit<'info> {
     // Only admin can deposit to Vault
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -210,6 +210,9 @@ pub struct Deposit<'info> {
         bump,
     )]
     pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(mut)]
+    pub box_pool: Account<'info, BoxPool>,
 
     #[account(
         mut,
@@ -242,7 +245,7 @@ pub struct Withdraw<'info> {
     // Only admin can withdraw from Vault
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -251,7 +254,10 @@ pub struct Withdraw<'info> {
         seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
         bump,
     )]
-    pub global_pool: Box<Account<'info, GlobalPool>>,
+    pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(mut)]
+    pub box_pool: Account<'info, BoxPool>,
 
     #[account(
         mut,
