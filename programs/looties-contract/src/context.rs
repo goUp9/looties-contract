@@ -19,8 +19,8 @@ pub struct Initialize<'info> {
     pub global_pool: Account<'info, GlobalPool>,
 
     // system
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -39,4 +39,45 @@ pub struct UpdateGlobal<'info> {
         bump,
     )]
     pub global_pool: Account<'info, GlobalPool>,
+}
+
+#[derive(Accounts)]
+#[instruction(_rand: Pubkey)]
+pub struct InitBox<'info> {
+    // Only admin can create box
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(
+        init,
+        seeds = [_rand.as_ref()],
+        bump,
+        space = 8 + BoxPool::INIT_SPACE,
+        payer = admin
+    )]
+    pub box_pool: Account<'info, BoxPool>,
+
+    #[account(
+        init,
+        seeds = [box_pool.key().as_ref()],
+        bump,
+        space = 8 + PrizePool::INIT_SPACE,
+        payer = admin
+    )]
+    pub prize_pool: Account<'info, PrizePool>,
+
+    // system
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }

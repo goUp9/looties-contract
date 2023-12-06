@@ -12,6 +12,9 @@ pub enum GameError {
     /// Invalid Admin
     #[msg("Invalid Admin")]
     InvalidAdmin,
+    /// Exceed Max Reward
+    #[msg("Exceed Max Reward")]
+    ExceedMaxReward,
     /// Chance Sum Invalid
     #[msg("Chance sum must be 10000")]
     ChanceSumInvalid,

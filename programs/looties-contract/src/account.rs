@@ -42,7 +42,7 @@ pub struct BoxPool {
     pub image_url: String,                  // 4 + 100
     pub price_in_sol: u64,                  // 8
 
-    pub nfts: Pubkey,                       // 32
+    pub prizes: Pubkey,                     // 32
 
     #[max_len(MAX_REWARD_IN_BOX)]
     pub rewards: Vec<Reward>,               // 4 + ___ * 20
