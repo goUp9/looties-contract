@@ -1,5 +1,6 @@
 use crate::account::*;
 use crate::constants::*;
+use crate::error::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
 
@@ -21,4 +22,21 @@ pub struct Initialize<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateGlobal<'info> {
+    // Current admin
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Account<'info, GlobalPool>,
 }

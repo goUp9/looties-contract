@@ -9,19 +9,10 @@ pub enum GameError {
     /// Exceed Max Box
     #[msg("Exceed Max Box")]
     ExceedMaxBox,
+    /// Invalid Admin
+    #[msg("Invalid Admin")]
+    InvalidAdmin,
     /// Chance Sum Invalid
     #[msg("Chance sum must be 10000")]
     ChanceSumInvalid,
-    /// Access Denied
-    #[msg("Access Denied")]
-    AccessDenied,
-    /// Insufficient Funds
-    #[msg("Insufficient Funds")]
-    InsufficientFunds,
-    /// Invalid Reward Type
-    #[msg("Invalid Reward Type")]
-    InvalidRewardType,
-    /// Invalid Reward Data
-    #[msg("Invalid Reward Data")]
-    InvalidRewardData,
 }

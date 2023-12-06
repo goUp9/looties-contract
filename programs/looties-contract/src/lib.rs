@@ -26,4 +26,18 @@ pub mod looties_contract {
 
         Ok(())
     }
+
+    /**
+     * Change admin
+     *
+     * @param - new_admin
+     */
+    pub fn change_admin(ctx: Context<UpdateGlobal>, new_admin: Pubkey) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+
+        // Don't need check admin since it signed the transaction
+        global_pool.admin = new_admin;
+
+        Ok(())
+    }
 }
