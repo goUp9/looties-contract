@@ -20,7 +20,7 @@ pub struct GlobalPool {
 
 impl GlobalPool {
     pub fn add_box(&mut self, box_addr: Pubkey) -> Result<()> {
-        require!(!self.boxes.iter().any(|&x| x != box_addr), GameError::BoxAlreadyExist);
+        require!(self.boxes.iter().all(|&x| x != box_addr), GameError::BoxAlreadyExist);
         require!(self.boxes.len() < MAX_BOX_IN_GAME, GameError::ExceedMaxBox);
         self.boxes.push(box_addr);
         Ok(())
@@ -76,6 +76,19 @@ pub struct Reward {
 pub struct PrizePool {
     #[max_len(MAX_NFT_IN_BOX)]
     pub nfts: Vec<NftInfo>,                 // 4 + 64 * 150
+}
+
+impl PrizePool {
+    pub fn add_nft(&mut self, collection_address: Pubkey, mint_info: Pubkey) -> Result<()> {
+        require!(self.nfts.iter().all(|x| x.mint_info != mint_info), GameError::NFTAlreadyExist);
+        require!(self.nfts.len() < MAX_NFT_IN_BOX, GameError::ExceedMaxNFT);
+        self.nfts.push(NftInfo::new(collection_address, mint_info));
+        Ok(())
+    }
+
+    pub fn remove_nft(&mut self, mint_info: Pubkey) {
+        self.nfts.retain(|x| x.mint_info != mint_info);
+    }
 }
 
 #[account]

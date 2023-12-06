@@ -30,4 +30,13 @@ pub enum GameError {
     /// Argument Invalid
     #[msg("Argument Invalid")]
     ArgumentInvalid,
+    /// Collection address doesn't exsit in box
+    #[msg("Collection address doesn't exsit in box")]
+    CollectionAddressNotExsit,
+    /// NFT Already Exist
+    #[msg("NFT Already Exist")]
+    NFTAlreadyExist,
+    /// Exceed Max NFT
+    #[msg("Exceed Max NFT")]
+    ExceedMaxNFT,
 }

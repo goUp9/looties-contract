@@ -123,7 +123,7 @@ pub mod looties_contract {
     /**
      * Remove box
      *
-     * @remainingAccount - NFT(global_pool's ATA, admin's ATA) list included in box
+     * @remainingAccount - NFT's ATA(global_pool's ATA, admin's ATA) list included in box
      */
     pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
@@ -183,6 +183,8 @@ pub mod looties_contract {
             idx += 2;
         }
 
+        prize_pool.nfts.clear();
+
         Ok(())
     }
 
@@ -192,7 +194,7 @@ pub mod looties_contract {
      * @param            - list of nft collection address
      *                   - list of nft mint address
      * 
-     * @remainingAccount - NFT(admin's ATA, global_pool's ATA) list included in box
+     * @remainingAccount - NFT's ATA(admin's ATA, global_pool's ATA) list included in box
      * 
      */
     pub fn deposit_nfts<'info>(
@@ -213,6 +215,15 @@ pub mod looties_contract {
         let mut idx = 0;
         for i in 0..len {
             let collection = collection_addr[i];
+
+            require!(box_pool.rewards.iter().any(|reward| {
+                if let Some(collection_addr) = reward.collection_address {
+                    reward.reward_type == 3 && collection_addr == collection
+                } else {
+                    false
+                }
+            }), GameError::CollectionAddressNotExsit);
+
             let nft = mint_addr[i];
 
             let src_ata = spl_associated_token_account::get_associated_token_address(
@@ -245,7 +256,76 @@ pub mod looties_contract {
                 1,
             )?;
 
-            prize_pool.nfts.push(NftInfo::new(collection, nft));
+            prize_pool.add_nft(collection, nft)?;
+
+            idx += 2;
+        }
+
+        Ok(())
+    }
+
+    /**
+     * Remove box
+     *
+     * @param            - NFT list to withdraw
+     * 
+     * @remainingAccount - NFT's ATA(global_pool's ATA, admin's ATA) list to withdraw
+     */
+    pub fn withdraw_nfts<'info>(
+        ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>,
+        nfts: Vec<Pubkey>
+    ) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let prize_pool = &mut ctx.accounts.prize_pool;
+
+        //  Transfer NFTs to admin wallet
+        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+
+        require!(remaining_accounts.len() == nfts.len() * 2, GameError::RemainingAccountCountDismatch);
+
+        let mut idx = 0;
+
+        for nft in nfts {
+            let src_ata = spl_associated_token_account::get_associated_token_address(
+                &global_pool.key(),
+                &nft,
+            );
+            require!(
+                remaining_accounts[idx].key().eq(&src_ata),
+                GameError::SrcAtaDismatch
+            );
+
+            let dest_ata = spl_associated_token_account::get_associated_token_address(
+                &ctx.accounts.admin.key(),
+                &nft,
+            );
+            require!(
+                remaining_accounts[idx + 1].key().eq(&dest_ata),
+                GameError::DestAtaDismatch
+            );
+
+            //  Transfer NFT
+            let global_bump = ctx.bumps.global_pool;
+            let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
+            let signer = &[&seeds[..]];
+
+            let cpi_accounts = Transfer {
+                from: remaining_accounts[idx].clone(),
+                to: remaining_accounts[idx + 1].clone(),
+                authority: global_pool.to_account_info(),
+            };
+
+            let token_program = &mut &ctx.accounts.token_program;
+            token::transfer(
+                CpiContext::new_with_signer(
+                    token_program.clone().to_account_info(),
+                    cpi_accounts,
+                    signer,
+                ),
+                1,
+            )?;
+
+            prize_pool.remove_nft(nft);
 
             idx += 2;
         }
