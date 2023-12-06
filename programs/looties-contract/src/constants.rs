@@ -1,5 +1,5 @@
 pub const MAX_BOX_IN_GAME: usize = 200;
-pub const MAX_TOKEN: usize = 20;
+pub const MAX_TOKEN_IN_GAME: usize = 20;
 pub const MAX_REWARD_IN_BOX: usize = 20;
 pub const MAX_NFT_IN_BOX: usize = 150;
 

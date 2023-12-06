@@ -19,6 +19,7 @@ default = []
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
 bytemuck = "1.14.0"
+sha2 = "0.10.8"
 solana-program = "1.17.7"
 spl-associated-token-account = "2.2.0"
 spl-token = "4.0.0"

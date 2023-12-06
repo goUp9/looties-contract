@@ -5,11 +5,11 @@ use crate::{
 };
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Default)]
 pub struct GlobalPool {
     pub admin: Pubkey,                          // 32
 
-    #[max_len(MAX_TOKEN)]
+    #[max_len(MAX_TOKEN_IN_GAME)]
     pub token_address: Vec<Pubkey>,             // 32 * 20
     pub token_count: u64,                       // 8
 
@@ -32,7 +32,7 @@ impl GlobalPool {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Default)]
 pub struct BoxPool {
     #[max_len(MAX_NAME_LENGTH)]
     pub name: String,                       // 4 + 25
@@ -49,7 +49,7 @@ pub struct BoxPool {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Default)]
 pub struct Reward {
     #[max_len(MAX_NAME_LENGTH)]
     pub name: String,                       // 4 + 25
@@ -72,7 +72,7 @@ pub struct Reward {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Default)]
 pub struct PrizePool {
     #[max_len(MAX_NFT_IN_BOX)]
     pub nfts: Vec<NftInfo>,                 // 4 + 64 * 150
@@ -89,10 +89,18 @@ impl PrizePool {
     pub fn remove_nft(&mut self, mint_info: Pubkey) {
         self.nfts.retain(|x| x.mint_info != mint_info);
     }
+
+    pub fn find_nft(&mut self, collection_address: Pubkey, exclude_nfts: &Vec<Pubkey>) -> Result<usize> {
+        if let Some(index) = self.nfts.iter().position(|x| x.collection_address == collection_address && !exclude_nfts.contains(&x.mint_info)) {
+            Ok(index)
+        } else {
+            err!(GameError::NFTNotFound)
+        }
+    }
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Default)]
 pub struct NftInfo {
     pub collection_address: Pubkey,         // 32
     pub mint_info: Pubkey,                  // 32

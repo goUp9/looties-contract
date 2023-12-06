@@ -15,6 +15,12 @@ pub enum GameError {
     /// Exceed Max Reward
     #[msg("Exceed Max Reward")]
     ExceedMaxReward,
+    /// Invalid Reward Type
+    #[msg("Invalid Reward Type")]
+    RewardTypeInvalid,
+    /// Unknown token address
+    #[msg("Unknown token address")]
+    TokenAddressUnknown,
     /// Chance Sum Invalid
     #[msg("Chance sum must be 10000")]
     ChanceSumInvalid,
@@ -39,4 +45,13 @@ pub enum GameError {
     /// Exceed Max NFT
     #[msg("Exceed Max NFT")]
     ExceedMaxNFT,
+    /// Exceed Max Token
+    #[msg("Exceed Max Token")]
+    ExceedMaxToken,
+    /// Unknown box address
+    #[msg("Unknown box address")]
+    BoxAddressUnknown,
+    /// NFT collection is empty
+    #[msg("NFT collection is empty")]
+    NFTNotFound,
 }

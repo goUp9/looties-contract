@@ -25,6 +25,7 @@ pub mod looties_contract {
         let global_pool = &mut ctx.accounts.global_pool;
 
         global_pool.admin = ctx.accounts.admin.key();
+        global_pool.token_count = 0;
 
         Ok(())
     }
@@ -70,7 +71,12 @@ pub mod looties_contract {
 
         let mut sum: u16 = 0;
         for reward in rewards.iter() {
-            sum += reward.chance
+            sum += reward.chance;
+            require!(reward.reward_type == 1 || reward.reward_type == 2 || reward.reward_type == 3, GameError::RewardTypeInvalid);
+            let token_mint = reward.token_address.unwrap();
+            if reward.reward_type == 2 && global_pool.token_address.iter().all(|&x| x != token_mint) {
+                return err!(GameError::TokenAddressUnknown);
+            }
         }
         require!(sum == CHANCE_SUM, GameError::ChanceSumInvalid);
 
@@ -265,7 +271,7 @@ pub mod looties_contract {
     }
 
     /**
-     * Remove box
+     * Withdraw NFTs
      *
      * @param            - NFT list to withdraw
      * 
@@ -340,6 +346,13 @@ pub mod looties_contract {
      *        - token amount to deposit
      */
     pub fn deposit(ctx: Context<Deposit>, sol_amount: u64, token_amount: u64) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+
+        if !global_pool.token_address.iter().all(|&token_mint| token_mint != ctx.accounts.token_mint.key()) {
+            require!(global_pool.token_count < MAX_TOKEN_IN_GAME as u64, GameError::ExceedMaxToken);
+            global_pool.token_address.push(ctx.accounts.token_mint.key());
+        }
+
         msg!("Depositer: {}", ctx.accounts.admin.to_account_info().key());
         msg!(
             "Asking to deposit: {} SOL, {} Token {}",
@@ -416,6 +429,184 @@ pub mod looties_contract {
                 &signer,
             );
             token::transfer(cpi_ctx, token_amount)?;
+        }
+
+        Ok(())
+    }
+
+    /**
+     * Opens box with SOL
+     * 
+     * @param             - open times
+     * 
+     * @remainingAccounts - list of SPL token's ATA(global_pool's ATA, player's ATA) included in game
+     *                    - list of NFT's ATA(global_pool's ATA, player's ATA) included in box
+     */
+    pub fn open_box<'info>(
+        ctx: Context<'_, '_, '_, 'info, OpenBox<'info>>,
+        open_times: u16,
+    ) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
+        let prize_pool = &mut ctx.accounts.prize_pool;
+        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+
+        //  Check box is legit
+        require!(global_pool.boxes.contains(&box_pool.key()), GameError::BoxAddressUnknown);
+
+        require!(remaining_accounts.len() == (global_pool.token_count as usize + prize_pool.nfts.len()) * 2, GameError::RemainingAccountCountDismatch);
+
+        msg!("Open box- player: {}, open times: {}", ctx.accounts.player.key(), open_times);
+
+        // Transfer SOL to vault from player.
+        sol_transfer_user(
+            ctx.accounts.player.to_account_info(),
+            ctx.accounts.sol_vault.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            box_pool.price_in_sol * open_times as u64,
+        )?;
+
+        // Generate random number
+        let clock = Clock::get()?;
+
+        let mut seed = clock.unix_timestamp as u64;
+        let mut random_numbers: Vec<u64> = Vec::new();
+        let mut reward_idxs: Vec<u8> = Vec::new();
+
+        for _ in 0..open_times {
+            let rand = get_rand(seed, clock.slot) % 10000 + 1;
+            random_numbers.push(rand);
+            seed = rand;
+
+            //  Find reward item
+            reward_idxs.push(calc_reward(&box_pool.rewards, rand as u16));
+        }
+
+        msg!("Rand: {:?}", random_numbers);
+        msg!("Reward item index: {:?}", reward_idxs);
+
+        let mut reward_sol = 0;
+        let mut reward_tokens = vec![0; global_pool.token_count as usize];
+        let mut reward_nfts = vec![];
+        let mut reward_nft_idxs = vec![];
+
+        for reward_id in reward_idxs {
+            let reward = &box_pool.rewards[reward_id as usize];
+
+            match reward.reward_type {
+                1 => {
+                    reward_sol += reward.sol;
+                },
+                2 => {
+                    let token_mint = reward.token_address.unwrap();
+                    let index = global_pool.token_address.iter().position(|&x| x == token_mint).unwrap();
+                    reward_tokens[index] += reward.token;
+                },
+                3 => {
+                    let collection = reward.collection_address.unwrap();
+                    let id = prize_pool.find_nft(collection, &reward_nfts)?;
+                    reward_nft_idxs.push(id);
+                    reward_nfts.push(prize_pool.nfts[id].mint_info);
+                },
+                _ => {}
+            }
+        }
+
+        let sol_vault_bump = ctx.bumps.sol_vault;
+
+        if reward_sol > 0 {
+            sol_transfer_with_signer(
+                ctx.accounts.sol_vault.to_account_info(),
+                ctx.accounts.player.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+                &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
+                reward_sol,
+            )?;
+        }
+
+        for (idx, &reward_token) in reward_tokens.iter().enumerate() {
+            if reward_token > 0 {
+                //  Transfer Token to user from PDA
+                let token_address = global_pool.token_address[idx];
+                let (src_ata, bump) = Pubkey::find_program_address(&[token_address.as_ref()], ctx.program_id);
+                let seeds = &[token_address.as_ref(), &[bump]];
+                let signer = [&seeds[..]];
+
+                let account_idx = idx * 2;
+                require!(
+                    remaining_accounts[account_idx].key().eq(&src_ata),
+                    GameError::SrcAtaDismatch
+                );
+
+                let dest_ata = spl_associated_token_account::get_associated_token_address(
+                    &ctx.accounts.player.key(),
+                    &token_address,
+                );
+                require!(
+                    remaining_accounts[account_idx + 1].key().eq(&dest_ata),
+                    GameError::DestAtaDismatch
+                );
+    
+                let cpi_ctx = CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    token::Transfer {
+                        from: remaining_accounts[account_idx].to_account_info(),
+                        authority: remaining_accounts[account_idx].to_account_info(),
+                        to: remaining_accounts[account_idx + 1].to_account_info(),
+                    },
+                    &signer,
+                );
+                token::transfer(cpi_ctx, reward_token)?;
+            }
+        }
+
+
+        for nft_idx in reward_nft_idxs {
+            let nft = &prize_pool.nfts[nft_idx];
+            let idx = 2 * global_pool.token_count as usize + nft_idx * 2;
+
+            let src_ata = spl_associated_token_account::get_associated_token_address(
+                &global_pool.key(),
+                &nft.mint_info,
+            );
+            require!(
+                remaining_accounts[idx].key().eq(&src_ata),
+                GameError::SrcAtaDismatch
+            );
+
+            let dest_ata = spl_associated_token_account::get_associated_token_address(
+                &ctx.accounts.player.key(),
+                &nft.mint_info,
+            );
+            require!(
+                remaining_accounts[idx + 1].key().eq(&dest_ata),
+                GameError::DestAtaDismatch
+            );
+
+            //  Transfer NFT
+            let global_bump = ctx.bumps.global_pool;
+            let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
+            let signer = &[&seeds[..]];
+
+            let cpi_accounts = Transfer {
+                from: remaining_accounts[idx].clone(),
+                to: remaining_accounts[idx + 1].clone(),
+                authority: global_pool.to_account_info(),
+            };
+
+            let token_program = &mut &ctx.accounts.token_program;
+            token::transfer(
+                CpiContext::new_with_signer(
+                    token_program.clone().to_account_info(),
+                    cpi_accounts,
+                    signer,
+                ),
+                1,
+            )?;
+        }
+
+        for nft in reward_nfts {
+            prize_pool.remove_nft(nft);
         }
 
         Ok(())

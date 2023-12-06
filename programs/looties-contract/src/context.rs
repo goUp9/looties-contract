@@ -278,3 +278,38 @@ pub struct Withdraw<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+pub struct OpenBox<'info> {
+    #[account(mut)]
+    pub player: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Box<Account<'info, GlobalPool>>,
+
+    #[account(mut)]
+    pub box_pool: Account<'info, BoxPool>,
+
+    #[account(
+        mut,
+        seeds = [box_pool.key().as_ref()],
+        bump,
+    )]
+    pub prize_pool: Account<'info, PrizePool>,
+
+    #[account(
+        mut,
+        seeds = [SOL_VAULT_SEED.as_ref()],
+        bump,
+    )]
+    /// CHECK
+    pub sol_vault: AccountInfo<'info>,
+
+    // system
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+}
