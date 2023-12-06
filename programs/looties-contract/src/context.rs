@@ -85,7 +85,7 @@ pub struct UpdateBox<'info> {
     // Only admin can update box
     #[account(
         mut,
-        constraint = global_pool.admin == *admin.key @GameError::InvalidAdmin
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -98,6 +98,35 @@ pub struct UpdateBox<'info> {
 
     #[account(mut)]
     pub box_pool: Account<'info, BoxPool>,
+
+    // system
+    pub token_program: Program<'info, Token>,
+}
+#[derive(Accounts)]
+pub struct RemoveBox<'info> {
+    // Only admin can remove box
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(mut)]
+    pub box_pool: Account<'info, BoxPool>,
+
+    #[account(
+        mut,
+        seeds = [box_pool.key().as_ref()],
+        bump,
+    )]
+    pub prize_pool: Account<'info, PrizePool>,
 
     // system
     pub token_program: Program<'info, Token>,

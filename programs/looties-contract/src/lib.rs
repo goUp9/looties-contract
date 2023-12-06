@@ -16,6 +16,8 @@ declare_id!("t1ynC7jhTJfZD8idR58Yz6EW8XiwajKzNXusf2tguBV");
 
 #[program]
 pub mod looties_contract {
+    use anchor_spl::token::{self, Transfer};
+
     use super::*;
 
     //  Initialize Global Pool
@@ -114,6 +116,68 @@ pub mod looties_contract {
         box_pool.image_url = image_url;
         box_pool.price_in_sol = price_in_sol;
         box_pool.rewards = rewards;
+
+        Ok(())
+    }
+
+    /**
+     * Update box
+     *
+     * @remainingAccount
+     */
+    pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
+        let prize_pool = &mut ctx.accounts.prize_pool;
+
+        global_pool.remove_box(box_pool.key());
+
+        //  Transfer NFTs to admin wallet
+        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+        let mut idx = 0;
+        let nfts = &prize_pool.nfts;
+        for nft in nfts {
+            let src_ata = spl_associated_token_account::get_associated_token_address(
+                &global_pool.key(),
+                &nft.mint_info,
+            );
+            require!(
+                remaining_accounts[idx].key().eq(&src_ata),
+                GameError::SrcAtaDismatch
+            );
+
+            let dest_ata = spl_associated_token_account::get_associated_token_address(
+                &ctx.accounts.admin.key(),
+                &nft.mint_info,
+            );
+            require!(
+                remaining_accounts[idx + 1].key().eq(&dest_ata),
+                GameError::DestAtaDismatch
+            );
+
+            //  Transfer NFT
+            let global_bump = ctx.bumps.global_pool;
+            let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
+            let signer = &[&seeds[..]];
+
+            let cpi_accounts = Transfer {
+                from: remaining_accounts[idx].clone(),
+                to: remaining_accounts[idx + 1].clone(),
+                authority: global_pool.to_account_info(),
+            };
+
+            let token_program = &mut &ctx.accounts.token_program;
+            token::transfer(
+                CpiContext::new_with_signer(
+                    token_program.clone().to_account_info(),
+                    cpi_accounts,
+                    signer,
+                ),
+                1,
+            )?;
+
+            idx += 2;
+        }
 
         Ok(())
     }

@@ -18,4 +18,10 @@ pub enum GameError {
     /// Chance Sum Invalid
     #[msg("Chance sum must be 10000")]
     ChanceSumInvalid,
+    /// Source ata dismatch
+    #[msg("Source ata dismatch")]
+    SrcAtaDismatch,
+    /// Dest ata dismatch
+    #[msg("Dest ata dismatch")]
+    DestAtaDismatch,
 }
