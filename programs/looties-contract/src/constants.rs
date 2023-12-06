@@ -10,3 +10,4 @@ pub const MAX_IMAGE_URL_LENGTH: usize = 50;
 pub const CHANCE_SUM: u16 = 10_000;
 
 pub const GLOBAL_AUTHORITY_SEED: &str = "global-authority";
+pub const SOL_VAULT_SEED: &str = "sol-vault";

@@ -332,4 +332,92 @@ pub mod looties_contract {
 
         Ok(())
     }
+
+    /**
+     * Deposit SOL/Token to PDA
+     *
+     * @param - sol amount to deposit
+     *        - token amount to deposit
+     */
+    pub fn deposit(ctx: Context<Deposit>, sol_amount: u64, token_amount: u64) -> Result<()> {
+        msg!("Depositer: {}", ctx.accounts.admin.to_account_info().key());
+        msg!(
+            "Asking to deposit: {} SOL, {} Token {}",
+            sol_amount,
+            token_amount,
+            ctx.accounts.token_mint.key(),
+        );
+        if sol_amount > 0 {
+            sol_transfer_user(
+                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.sol_vault.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+                sol_amount,
+            )?;
+        }
+
+        if token_amount > 0 {
+            //  Transfer Token to PDA from admin
+            let cpi_ctx = CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                token::Transfer {
+                    from: ctx.accounts.token_admin.to_account_info(),
+                    authority: ctx.accounts.token_vault.to_account_info(),
+                    to: ctx.accounts.token_vault.to_account_info(),
+                },
+            );
+            token::transfer(cpi_ctx, token_amount)?;
+        }
+
+        Ok(())
+    }
+
+    /**
+     * Withdraw SOL/Token from PDA
+     *
+     * @param - sol amount to withdraw
+     *        - token amount to withdraw
+     */
+    pub fn withdraw(ctx: Context<Withdraw>, sol_amount: u64, token_amount: u64) -> Result<()> {
+        msg!("Withdrawer: {}", ctx.accounts.admin.to_account_info().key());
+        msg!(
+            "Asking to withdraw: {} SOL, {} Token {}",
+            sol_amount,
+            token_amount,
+            ctx.accounts.token_mint.key(),
+        );
+
+        let sol_vault_bump = ctx.bumps.sol_vault;
+        let token_vault_bump = ctx.bumps.token_vault;
+
+        if sol_amount > 0 {
+            sol_transfer_with_signer(
+                ctx.accounts.sol_vault.to_account_info(),
+                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+                &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
+                sol_amount,
+            )?;
+        }
+
+        if token_amount > 0 {
+            //  Transfer Token to admin from PDA
+            let token_address = ctx.accounts.token_mint.key();
+            let seeds = &[token_address.as_ref(), &[token_vault_bump]];
+            let signer = [&seeds[..]];
+
+            let cpi_ctx = CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                token::Transfer {
+                    from: ctx.accounts.token_vault.to_account_info(),
+                    authority: ctx.accounts.token_vault.to_account_info(),
+                    to: ctx.accounts.token_admin.to_account_info(),
+                },
+                &signer,
+            );
+            token::transfer(cpi_ctx, token_amount)?;
+        }
+
+        Ok(())
+    }
 }

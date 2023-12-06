@@ -2,7 +2,9 @@ use crate::account::*;
 use crate::constants::*;
 use crate::error::*;
 use anchor_lang::prelude::*;
+use anchor_spl::token::Mint;
 use anchor_spl::token::Token;
+use anchor_spl::token::TokenAccount;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -163,7 +165,6 @@ pub struct DepositNfts<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-
 #[derive(Accounts)]
 pub struct WithdrawNfts<'info> {
     // Only admin can withdraw nfts
@@ -192,4 +193,88 @@ pub struct WithdrawNfts<'info> {
 
     // system
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct Deposit<'info> {
+    // Only admin can deposit to Vault
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Account<'info, GlobalPool>,
+
+    #[account(
+        mut,
+        seeds = [SOL_VAULT_SEED.as_ref()],
+        bump,
+    )]
+    /// CHECK
+    pub sol_vault: AccountInfo<'info>,
+
+    // Associated Token Account for admin which holds Token
+    #[account(mut)]
+    pub token_admin: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds=[token_mint.key().as_ref()],
+        bump,
+    )]
+    pub token_vault: Account<'info, TokenAccount>,
+
+    pub token_mint: Account<'info, Mint>,
+
+    // SPL Token Program to transfer Token
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    // Only admin can withdraw from Vault
+    #[account(
+        mut,
+        constraint = global_pool.admin == *admin.key @ GameError::InvalidAdmin
+    )]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
+        bump,
+    )]
+    pub global_pool: Box<Account<'info, GlobalPool>>,
+
+    #[account(
+        mut,
+        seeds = [SOL_VAULT_SEED.as_ref()],
+        bump,
+    )]
+    /// CHECK
+    pub sol_vault: AccountInfo<'info>,
+
+    // Associated Token Account for admin which holds Token
+    #[account(mut)]
+    pub token_admin: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds=[token_mint.key().as_ref()],
+        bump,
+    )]
+    pub token_vault: Account<'info, TokenAccount>,
+
+    pub token_mint: Account<'info, Mint>,
+
+    // SPL Token Program to transfer Token
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
