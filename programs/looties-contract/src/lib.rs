@@ -44,6 +44,23 @@ pub mod looties_contract {
     }
 
     /**
+     * Add SPL token address for game.
+     *
+     * @param - token mint address
+     */
+    pub fn add_token_address(ctx: Context<UpdateGlobal>, token_address: Pubkey) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+
+        require!(global_pool.token_address.len() < MAX_TOKEN_IN_GAME, GameError::ExceedMaxTokenAddress);
+        require!(global_pool.token_address.iter().all(|&x| x != token_address), GameError::TokenAddressAlreadyExist);
+
+        global_pool.token_address.push(token_address);
+        global_pool.token_count += 1;
+
+        Ok(())
+    }
+
+    /**
      * Change admin for box
      *
      * @param - new_admin

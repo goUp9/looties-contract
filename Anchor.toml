@@ -7,11 +7,14 @@ skip-lint = false
 [programs.localnet]
 looties_contract = "t1ynC7jhTJfZD8idR58Yz6EW8XiwajKzNXusf2tguBV"
 
+[programs.devnet]
+looties_contract = "t1ynC7jhTJfZD8idR58Yz6EW8XiwajKzNXusf2tguBV"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "/home/wonder/.config/solana/id.json"
 
 [scripts]

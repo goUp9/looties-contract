@@ -9,6 +9,12 @@ pub enum GameError {
     /// Exceed Max Box
     #[msg("Exceed Max Box")]
     ExceedMaxBox,
+    /// Token Address Already Exist
+    #[msg("Token Address Already Exist")]
+    TokenAddressAlreadyExist,
+    /// Exceed Max Token Address
+    #[msg("Exceed Max Token Address")]
+    ExceedMaxTokenAddress,
     /// Invalid Super Admin
     #[msg("Invalid Super Admin")]
     InvalidSuperAdmin,
