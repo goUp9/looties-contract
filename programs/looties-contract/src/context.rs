@@ -43,7 +43,6 @@ pub struct UpdateGlobal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(_rand: Pubkey)]
 pub struct InitBox<'info> {
     // Only admin can create box
     #[account(
@@ -61,12 +60,16 @@ pub struct InitBox<'info> {
 
     #[account(
         init,
-        seeds = [_rand.as_ref()],
+        seeds = [BOX_AUTHORITY_SEED.as_ref(), rand_key.key().as_ref()],
         bump,
         space = 8 + BoxPool::INIT_SPACE,
         payer = super_admin
     )]
     pub box_pool: Account<'info, BoxPool>,
+
+    /// CHECK
+    #[account(mut)]
+    pub rand_key: AccountInfo<'info>,
 
     #[account(
         init,
@@ -228,8 +231,8 @@ pub struct Deposit<'info> {
 
     #[account(
         mut,
-        seeds=[token_mint.key().as_ref()],
-        bump,
+        constraint = token_vault.mint == token_mint.key(),
+        constraint = token_vault.owner == global_pool.key(),
     )]
     pub token_vault: Account<'info, TokenAccount>,
 
@@ -273,8 +276,8 @@ pub struct Withdraw<'info> {
 
     #[account(
         mut,
-        seeds=[token_mint.key().as_ref()],
-        bump,
+        constraint = token_vault.mint == token_mint.key(),
+        constraint = token_vault.owner == global_pool.key(),
     )]
     pub token_vault: Account<'info, TokenAccount>,
 
@@ -314,6 +317,18 @@ pub struct OpenBox<'info> {
     )]
     /// CHECK
     pub sol_vault: AccountInfo<'info>,
+
+    /// CHECK
+    #[account(mut)]
+    pub admin1: AccountInfo<'info>,
+
+    /// CHECK
+    #[account(mut)]
+    pub admin2: AccountInfo<'info>,
+
+    /// CHECK
+    #[account(mut)]
+    pub admin3: AccountInfo<'info>,
 
     // system
     pub system_program: Program<'info, System>,

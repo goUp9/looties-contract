@@ -4,13 +4,21 @@ import { LootiesContract } from "../target/types/looties_contract";
 
 describe("looties-contract", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
 
   const program = anchor.workspace.LootiesContract as Program<LootiesContract>;
+  const wallet = provider.wallet as anchor.Wallet;
+  const payer = wallet.payer;
+  const authority = wallet.publicKey;
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+  it("Initialise global pool", async () => {
+    await program.methods
+      .initialize()
+      .accounts({
+        superAdmin: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc();
   });
 });

@@ -53,8 +53,7 @@ pub struct BoxPool {
     pub rewards: Vec<Reward>,                       // 4 + ___ * 20
 }
 
-#[account]
-#[derive(InitSpace, Default)]
+#[derive(InitSpace, Default, AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct Reward {
     #[max_len(MAX_NAME_LENGTH)]
     pub name: String,                       // 4 + 25
@@ -71,9 +70,9 @@ pub struct Reward {
     pub sol: u64,                           // 8
 
     pub token: u64,                         // 8
-    pub token_address: Option<Pubkey>,      // 1 + 32
+    pub token_address: Pubkey,              // 32
 
-    pub collection_address: Option<Pubkey>, // 1 + 32
+    pub collection_address: Pubkey,         // 32
 }
 
 #[account]
@@ -104,8 +103,7 @@ impl PrizePool {
     }
 }
 
-#[account]
-#[derive(InitSpace, Default)]
+#[derive(InitSpace, Default, AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct NftInfo {
     pub collection_address: Pubkey,         // 32
     pub mint_info: Pubkey,                  // 32

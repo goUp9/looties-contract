@@ -10,4 +10,9 @@ pub const MAX_IMAGE_URL_LENGTH: usize = 50;
 pub const CHANCE_SUM: u16 = 10_000;
 
 pub const GLOBAL_AUTHORITY_SEED: &str = "global-authority";
+pub const BOX_AUTHORITY_SEED: &str = "box-authority";
 pub const SOL_VAULT_SEED: &str = "sol-vault";
+
+pub const ADMIN1: &str = "CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ";
+pub const ADMIN2: &str = "CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ";
+pub const ADMIN3: &str = "CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ";

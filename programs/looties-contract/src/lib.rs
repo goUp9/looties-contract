@@ -93,7 +93,6 @@ pub mod looties_contract {
         image_url: String,
         price_in_sol: u64,
         rewards: Vec<Reward>,
-        _rand: Pubkey,
     ) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
         let box_pool = &mut ctx.accounts.box_pool;
@@ -105,7 +104,7 @@ pub mod looties_contract {
         for reward in rewards.iter() {
             sum += reward.chance;
             require!(reward.reward_type == 1 || reward.reward_type == 2 || reward.reward_type == 3, GameError::RewardTypeInvalid);
-            let token_mint = reward.token_address.unwrap();
+            let token_mint = reward.token_address;
             if reward.reward_type == 2 && global_pool.token_address.iter().all(|&x| x != token_mint) {
                 return err!(GameError::TokenAddressUnknown);
             }
@@ -255,13 +254,7 @@ pub mod looties_contract {
         for i in 0..len {
             let collection = collection_addr[i];
 
-            require!(box_pool.rewards.iter().any(|reward| {
-                if let Some(collection_addr) = reward.collection_address {
-                    reward.reward_type == 3 && collection_addr == collection
-                } else {
-                    false
-                }
-            }), GameError::CollectionAddressNotExsit);
+            require!(box_pool.rewards.iter().any(|reward| reward.reward_type == 3 && reward.collection_address == collection), GameError::CollectionAddressNotExsit);
 
             let nft = mint_addr[i];
 
@@ -382,11 +375,6 @@ pub mod looties_contract {
         let global_pool = &mut ctx.accounts.global_pool;
         let box_pool = &mut ctx.accounts.box_pool;
 
-        let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
-            Some(id) => id,
-            None => return err!(GameError::TokenAddressUnknown),
-        };
-
         msg!("Depositer: {}", ctx.accounts.admin.to_account_info().key());
         msg!(
             "Asking to deposit: {} SOL, {} Token {}",
@@ -405,12 +393,16 @@ pub mod looties_contract {
         }
 
         if token_amount > 0 {
+            let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
+                Some(id) => id,
+                None => return err!(GameError::TokenAddressUnknown),
+            };
             //  Transfer Token to PDA from admin
             let cpi_ctx = CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 token::Transfer {
                     from: ctx.accounts.token_admin.to_account_info(),
-                    authority: ctx.accounts.token_vault.to_account_info(),
+                    authority: ctx.accounts.admin.to_account_info(),
                     to: ctx.accounts.token_vault.to_account_info(),
                 },
             );
@@ -439,7 +431,6 @@ pub mod looties_contract {
         );
 
         let sol_vault_bump = ctx.bumps.sol_vault;
-        let token_vault_bump = ctx.bumps.token_vault;
 
         let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
             Some(id) => id,
@@ -461,15 +452,15 @@ pub mod looties_contract {
 
         if token_amount > 0 {
             //  Transfer Token to admin from PDA
-            let token_address = ctx.accounts.token_mint.key();
-            let seeds = &[token_address.as_ref(), &[token_vault_bump]];
+            let global_bump = ctx.bumps.global_pool;
+            let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
             let signer = [&seeds[..]];
 
             let cpi_ctx = CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                 token::Transfer {
                     from: ctx.accounts.token_vault.to_account_info(),
-                    authority: ctx.accounts.token_vault.to_account_info(),
+                    authority: ctx.accounts.global_pool.to_account_info(),
                     to: ctx.accounts.token_admin.to_account_info(),
                 },
                 &signer,
@@ -503,15 +494,40 @@ pub mod looties_contract {
 
         require!(remaining_accounts.len() == (global_pool.token_count as usize + prize_pool.nfts.len()) * 2, GameError::RemainingAccountCountDismatch);
 
+        require!(ctx.accounts.admin1.key().to_string() == String::from(ADMIN1), GameError::InvalidAdminAddress);
+        require!(ctx.accounts.admin2.key().to_string() == String::from(ADMIN2), GameError::InvalidAdminAddress);
+        require!(ctx.accounts.admin3.key().to_string() == String::from(ADMIN3), GameError::InvalidAdminAddress);
+
         msg!("Open box- player: {}, open times: {}", ctx.accounts.player.key(), open_times);
 
         // Transfer SOL to vault from player.
+        let total_amount = box_pool.price_in_sol * open_times as u64;
+        let platform_fee = total_amount / 100;
+        sol_transfer_user(
+            ctx.accounts.player.to_account_info(),
+            ctx.accounts.admin1.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            platform_fee,
+        )?;
+        sol_transfer_user(
+            ctx.accounts.player.to_account_info(),
+            ctx.accounts.admin2.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            platform_fee,
+        )?;
+        sol_transfer_user(
+            ctx.accounts.player.to_account_info(),
+            ctx.accounts.admin3.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            platform_fee,
+        )?;
         sol_transfer_user(
             ctx.accounts.player.to_account_info(),
             ctx.accounts.sol_vault.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
-            box_pool.price_in_sol * open_times as u64,
+            total_amount - 3 * platform_fee,
         )?;
+        box_pool.sol_amount += total_amount - 3 * platform_fee;
 
         // Generate random number
         let clock = Clock::get()?;
@@ -537,20 +553,20 @@ pub mod looties_contract {
         let mut reward_nfts = vec![];
         let mut reward_nft_idxs = vec![];
 
-        for reward_id in reward_idxs {
-            let reward = &box_pool.rewards[reward_id as usize];
-
+        for reward_id in &reward_idxs {
+            let reward = &box_pool.rewards[*reward_id as usize];
+            
             match reward.reward_type {
                 1 => {
                     reward_sol += reward.sol;
                 },
                 2 => {
-                    let token_mint = reward.token_address.unwrap();
+                    let token_mint = reward.token_address;
                     let index = global_pool.token_address.iter().position(|&x| x == token_mint).unwrap();
                     reward_tokens[index] += reward.token;
                 },
                 3 => {
-                    let collection = reward.collection_address.unwrap();
+                    let collection = reward.collection_address;
                     let id = prize_pool.find_nft(collection, &reward_nfts)?;
                     reward_nft_idxs.push(id);
                     reward_nfts.push(prize_pool.nfts[id].mint_info);
@@ -558,60 +574,74 @@ pub mod looties_contract {
                 _ => {}
             }
         }
-
+        
         let sol_vault_bump = ctx.bumps.sol_vault;
-
         require!(box_pool.sol_amount >= reward_sol, GameError::InsufficientFunds);
-        if reward_sol > 0 {
-            sol_transfer_with_signer(
-                ctx.accounts.sol_vault.to_account_info(),
-                ctx.accounts.player.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-                &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
-                reward_sol,
-            )?;
-            box_pool.sol_amount -= reward_sol;
-        }
 
         for (idx, &reward_token) in reward_tokens.iter().enumerate() {
             if reward_token > 0 {
                 require!(box_pool.token_amount[idx] >= reward_token, GameError::InsufficientFunds);
-                //  Transfer Token to user from PDA
-                let token_address = global_pool.token_address[idx];
-                let (src_ata, bump) = Pubkey::find_program_address(&[token_address.as_ref()], ctx.program_id);
-                let seeds = &[token_address.as_ref(), &[bump]];
-                let signer = [&seeds[..]];
-
-                let account_idx = idx * 2;
-                require!(
-                    remaining_accounts[account_idx].key().eq(&src_ata),
-                    GameError::SrcAtaDismatch
-                );
-
-                let dest_ata = spl_associated_token_account::get_associated_token_address(
-                    &ctx.accounts.player.key(),
-                    &token_address,
-                );
-                require!(
-                    remaining_accounts[account_idx + 1].key().eq(&dest_ata),
-                    GameError::DestAtaDismatch
-                );
-    
-                let cpi_ctx = CpiContext::new_with_signer(
-                    ctx.accounts.token_program.to_account_info(),
-                    token::Transfer {
-                        from: remaining_accounts[account_idx].to_account_info(),
-                        authority: remaining_accounts[account_idx].to_account_info(),
-                        to: remaining_accounts[account_idx + 1].to_account_info(),
-                    },
-                    &signer,
-                );
-                token::transfer(cpi_ctx, reward_token)?;
-
-                box_pool.token_amount[idx] -= reward_token;
             }
         }
 
+        for reward_id in &reward_idxs {
+            let reward = &box_pool.rewards[*reward_id as usize];
+            
+            match reward.reward_type {
+                1 => {
+                    sol_transfer_with_signer(
+                        ctx.accounts.sol_vault.to_account_info(),
+                        ctx.accounts.player.to_account_info(),
+                        ctx.accounts.system_program.to_account_info(),
+                        &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
+                        reward.sol,
+                    )?;
+                    box_pool.sol_amount -= reward.sol;
+                },
+                2 => {
+                    let token_address = reward.token_address;
+                    let idx = global_pool.token_address.iter().position(|&x| x == token_address).unwrap();
+                    let src_ata = spl_associated_token_account::get_associated_token_address(
+                        &global_pool.key(),
+                        &token_address,
+                    );
+
+                    let global_bump = ctx.bumps.global_pool;
+                    let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
+                    let signer = [&seeds[..]];
+    
+                    let account_idx = idx * 2;
+                    require!(
+                        remaining_accounts[account_idx].key().eq(&src_ata),
+                        GameError::SrcAtaDismatch
+                    );
+    
+                    let dest_ata = spl_associated_token_account::get_associated_token_address(
+                        &ctx.accounts.player.key(),
+                        &token_address,
+                    );
+                    require!(
+                        remaining_accounts[account_idx + 1].key().eq(&dest_ata),
+                        GameError::DestAtaDismatch
+                    );
+        
+                    let cpi_ctx = CpiContext::new_with_signer(
+                        ctx.accounts.token_program.to_account_info(),
+                        token::Transfer {
+                            from: remaining_accounts[account_idx].to_account_info(),
+                            authority: global_pool.to_account_info(),
+                            to: remaining_accounts[account_idx + 1].to_account_info(),
+                        },
+                        &signer,
+                    );
+                    token::transfer(cpi_ctx, reward.token)?;
+    
+                    box_pool.token_amount[idx] -= reward.token;
+                },
+                3 => {},
+                _ => {}
+            }
+        }
 
         for nft_idx in reward_nft_idxs {
             let nft = &prize_pool.nfts[nft_idx];

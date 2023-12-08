@@ -60,6 +60,9 @@ pub enum GameError {
     /// Unknown box address
     #[msg("Unknown box address")]
     BoxAddressUnknown,
+    /// Invalid Admin Address
+    #[msg("Invalid Admin Address")]
+    InvalidAdminAddress,
     /// NFT collection is empty
     #[msg("NFT collection is empty")]
     NFTNotFound,
