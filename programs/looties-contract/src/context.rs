@@ -143,7 +143,7 @@ pub struct DepositNfts<'info> {
     // Only admin can deposit nfts
     #[account(
         mut,
-        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key || global_pool.super_admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
@@ -203,7 +203,7 @@ pub struct Deposit<'info> {
     // Only admin can deposit to Vault
     #[account(
         mut,
-        constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
+        constraint = box_pool.admin == *admin.key || global_pool.super_admin == *admin.key @ GameError::InvalidAdmin
     )]
     pub admin: Signer<'info>,
 
