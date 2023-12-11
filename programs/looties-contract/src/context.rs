@@ -334,3 +334,22 @@ pub struct OpenBox<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
+
+
+#[derive(Accounts)]
+pub struct InitPlayer<'info> {
+    #[account(mut)]
+    pub player: Signer<'info>,
+
+    #[account(
+        init,
+        space = 8 + PlayerPool::INIT_SPACE,
+        seeds = [player.key().as_ref(), PLAYER_POOL_SEED.as_ref()],
+        bump,
+        payer = player
+    )]
+    pub player_pool: Account<'info, PlayerPool>,
+
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}

@@ -473,6 +473,17 @@ pub mod looties_contract {
     }
 
     /**
+     * Initialize player pool
+     */
+    pub fn init_player(ctx: Context<InitPlayer>) -> Result<()> {
+        let player_pool = &mut ctx.accounts.player_pool;
+
+        player_pool.player = ctx.accounts.player.key();
+
+        Ok(())
+    }
+
+    /**
      * Opens box with SOL
      * 
      * @param             - open times

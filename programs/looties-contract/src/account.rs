@@ -117,3 +117,13 @@ impl NftInfo {
         }
     }
 }
+
+#[account]
+#[derive(InitSpace, Default)]
+pub struct PlayerPool {
+    pub player: Pubkey, // 32
+
+    //  Last game data
+    pub box_addr: Pubkey,
+    pub open_times: u16,
+}
