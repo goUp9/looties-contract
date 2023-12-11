@@ -487,9 +487,6 @@ pub mod looties_contract {
      * Opens box with SOL
      * 
      * @param             - open times
-     * 
-     * @remainingAccounts - list of SPL token's ATA(global_pool's ATA, player's ATA) included in game
-     *                    - list of NFT's ATA(global_pool's ATA, player's ATA) included in box
      */
     pub fn open_box<'info>(
         ctx: Context<'_, '_, '_, 'info, OpenBox<'info>>,
@@ -497,13 +494,10 @@ pub mod looties_contract {
     ) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
         let box_pool = &mut ctx.accounts.box_pool;
-        let prize_pool = &mut ctx.accounts.prize_pool;
-        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+        let player_pool = &mut ctx.accounts.player_pool;
 
         //  Check box is legit
         require!(global_pool.boxes.contains(&box_pool.key()), GameError::BoxAddressUnknown);
-
-        require!(remaining_accounts.len() == (global_pool.token_count as usize + prize_pool.nfts.len()) * 2, GameError::RemainingAccountCountDismatch);
 
         require!(ctx.accounts.admin1.key().to_string() == String::from(ADMIN1), GameError::InvalidAdminAddress);
         require!(ctx.accounts.admin2.key().to_string() == String::from(ADMIN2), GameError::InvalidAdminAddress);
@@ -556,15 +550,34 @@ pub mod looties_contract {
             reward_idxs.push(calc_reward(&box_pool.rewards, rand as u16));
         }
 
-        msg!("Rand: {:?}", random_numbers);
-        msg!("Reward item index: {:?}", reward_idxs);
+        player_pool.reward_idxs = reward_idxs;
+        player_pool.box_addr = box_pool.key();
+        player_pool.open_times = open_times;
+
+        Ok(())
+    }
+
+    /**
+     * Claim reward
+     * 
+     * @remainingAccounts - list of SPL token's ATA(global_pool's ATA, player's ATA) included in game
+     *                    - list of NFT's ATA(global_pool's ATA, player's ATA) included in box
+     */
+    pub fn claim_reward<'info>(
+        ctx: Context<'_, '_, '_, 'info, ClaimReward<'info>>,
+    ) -> Result<()> {
+        let global_pool = &mut ctx.accounts.global_pool;
+        let box_pool = &mut ctx.accounts.box_pool;
+        let prize_pool = &mut ctx.accounts.prize_pool;
+        let player_pool = &mut ctx.accounts.player_pool;
+        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
 
         let mut reward_sol = 0;
         let mut reward_tokens = vec![0; global_pool.token_count as usize];
         let mut reward_nfts = vec![];
         let mut reward_nft_idxs = vec![];
 
-        for reward_id in &reward_idxs {
+        for reward_id in &player_pool.reward_idxs {
             let reward = &box_pool.rewards[*reward_id as usize];
             
             match reward.reward_type {
@@ -595,7 +608,7 @@ pub mod looties_contract {
             }
         }
 
-        for reward_id in &reward_idxs {
+        for reward_id in &player_pool.reward_idxs {
             let reward = &box_pool.rewards[*reward_id as usize];
             
             match reward.reward_type {
@@ -620,7 +633,7 @@ pub mod looties_contract {
                     let global_bump = ctx.bumps.global_pool;
                     let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
                     let signer = [&seeds[..]];
-    
+
                     let account_idx = idx * 2;
                     require!(
                         remaining_accounts[account_idx].key().eq(&src_ata),
