@@ -42,5 +42,15 @@ export interface PrizePool {
 export interface NftInfo {
     collectionAddress: PublicKey,
     mintInfo: PublicKey,
+    rewarded: boolean,
 }
 
+export interface PlayerPool {
+    player: PublicKey,
+    box_addr: PublicKey,
+    openTimes: number,
+    lastRewardIdxs: number[],
+    claimableSol: anchor.BN,
+    claimableToken: anchor.BN[],
+    claimableNfts: PublicKey[],
+}

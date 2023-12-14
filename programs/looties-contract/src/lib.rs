@@ -188,7 +188,7 @@ pub mod looties_contract {
      */
     pub fn deposit_nfts<'info>(
         ctx: Context<'_, '_, '_, 'info, DepositNfts<'info>>,
-        collection_addr: Vec<Pubkey>,
+        collection_addr: Pubkey,
         mint_addr: Vec<Pubkey>,
     ) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
@@ -196,17 +196,13 @@ pub mod looties_contract {
         let prize_pool = &mut ctx.accounts.prize_pool;
         let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
 
-        let len = collection_addr.len();
+        let len = mint_addr.len();
         require!(remaining_accounts.len() == len * 2, GameError::RemainingAccountCountDismatch);
-        require!(mint_addr.len() == len, GameError::ArgumentInvalid);
-        
+        require!(box_pool.rewards.iter().any(|reward| reward.reward_type == 3 && reward.collection_address == collection_addr), GameError::CollectionAddressNotExsit);
+
         //  Transfer NFTs to program ATA
         let mut idx = 0;
         for i in 0..len {
-            let collection = collection_addr[i];
-
-            require!(box_pool.rewards.iter().any(|reward| reward.reward_type == 3 && reward.collection_address == collection), GameError::CollectionAddressNotExsit);
-
             let nft = mint_addr[i];
 
             let src_ata = spl_associated_token_account::get_associated_token_address(
@@ -239,7 +235,7 @@ pub mod looties_contract {
                 1,
             )?;
 
-            prize_pool.add_nft(collection, nft)?;
+            prize_pool.add_nft(collection_addr, nft)?;
 
             idx += 2;
         }
@@ -530,6 +526,8 @@ pub mod looties_contract {
                     player_pool.claimable_nfts.push(prize.mint_info);
                 }
             }
+
+            require!(select == true, GameError::InsufficientFunds);
         }
 
         Ok(())

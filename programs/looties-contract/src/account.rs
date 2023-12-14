@@ -128,7 +128,6 @@ pub struct PlayerPool {
     //  Last game data
     pub box_addr: Pubkey,
     pub open_times: u16,
-
     #[max_len(MAX_OPEN_TIME_IN_GAME)]
     pub last_reward_idxs: Vec<u8>,
 

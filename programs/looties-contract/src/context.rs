@@ -103,9 +103,6 @@ pub struct UpdateBox<'info> {
 
     #[account(mut)]
     pub box_pool: Account<'info, BoxPool>,
-
-    // system
-    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
