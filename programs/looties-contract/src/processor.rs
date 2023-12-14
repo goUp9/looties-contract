@@ -34,8 +34,7 @@ pub fn calc_reward(rewards: &Vec<Reward>, rand: u16) -> u8 {
     for reward in rewards.iter() {
         cur_sum += reward.chance;
         if rand <= cur_sum {
-            //  Found reward
-            break;
+            continue;
         }
         idx += 1;
     }

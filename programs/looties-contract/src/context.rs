@@ -73,7 +73,7 @@ pub struct InitBox<'info> {
 
     #[account(
         init,
-        seeds = [box_pool.key().as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
         bump,
         space = 8 + PrizePool::INIT_SPACE,
         payer = super_admin
@@ -129,7 +129,7 @@ pub struct RemoveBox<'info> {
 
     #[account(
         mut,
-        seeds = [box_pool.key().as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
         bump,
     )]
     pub prize_pool: Account<'info, PrizePool>,
@@ -156,7 +156,7 @@ pub struct DepositNfts<'info> {
 
     #[account(
         mut,
-        seeds = [box_pool.key().as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
         bump,
     )]
     pub prize_pool: Account<'info, PrizePool>,
@@ -186,7 +186,7 @@ pub struct WithdrawNfts<'info> {
 
     #[account(
         mut,
-        seeds = [box_pool.key().as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
         bump,
     )]
     pub prize_pool: Account<'info, PrizePool>,
@@ -308,7 +308,14 @@ pub struct OpenBox<'info> {
 
     #[account(
         mut,
-        seeds = [player.key().as_ref(), PLAYER_POOL_SEED.as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
+        bump,
+    )]
+    pub prize_pool: Account<'info, PrizePool>,
+
+    #[account(
+        mut,
+        seeds = [PLAYER_POOL_SEED.as_ref(), player.key().as_ref()],
         bump
     )]
     pub player_pool: Account<'info, PlayerPool>,
@@ -354,14 +361,14 @@ pub struct ClaimReward<'info> {
 
     #[account(
         mut,
-        seeds = [box_pool.key().as_ref()],
+        seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
         bump,
     )]
     pub prize_pool: Account<'info, PrizePool>,
 
     #[account(
         mut,
-        seeds = [player.key().as_ref(), PLAYER_POOL_SEED.as_ref()],
+        seeds = [PLAYER_POOL_SEED.as_ref(), player.key().as_ref()],
         bump,
         constraint = player_pool.player == player.key(),
         constraint = player_pool.box_addr == box_pool.key(),
@@ -389,7 +396,7 @@ pub struct InitPlayer<'info> {
     #[account(
         init,
         space = 8 + PlayerPool::INIT_SPACE,
-        seeds = [player.key().as_ref(), PLAYER_POOL_SEED.as_ref()],
+        seeds = [PLAYER_POOL_SEED.as_ref(), player.key().as_ref()],
         bump,
         payer = player
     )]
