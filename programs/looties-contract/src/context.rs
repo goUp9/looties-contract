@@ -133,9 +133,6 @@ pub struct RemoveBox<'info> {
         bump,
     )]
     pub prize_pool: Account<'info, PrizePool>,
-
-    // system
-    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]

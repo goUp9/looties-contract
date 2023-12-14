@@ -69,4 +69,16 @@ pub enum GameError {
     /// Insufficient Funds
     #[msg("Insufficient Funds")]
     InsufficientFunds,
+    /// Open_time cannot exceed 3.
+    #[msg("Open_time cannot exceed 3.")]
+    OpenTimeExceed,
+    /// Sol balance exist in the box
+    #[msg("Sol balance exist in the box")]
+    SolBalanceExist,
+    /// Token balance exist in the box
+    #[msg("Token balance exist in the box")]
+    TokenBalanceExist,
+    /// NFT balance exist in the box
+    #[msg("NFT balance exist in the box")]
+    NFTBalanceExist,
 }

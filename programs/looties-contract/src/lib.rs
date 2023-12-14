@@ -83,7 +83,6 @@ pub mod looties_contract {
      *        - image url of box
      *        - price in sol to open the box
      *        - rewards
-     *        - random address to use as seed
      */
     pub fn init_box<'info>(
         ctx: Context<'_, '_, '_, 'info, InitBox<'info>>,
@@ -160,68 +159,20 @@ pub mod looties_contract {
 
     /**
      * Remove box
-     *
-     * @remainingAccount - NFT's ATA(global_pool's ATA, box admin's ATA) list included in box
      */
     pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
         let global_pool = &mut ctx.accounts.global_pool;
         let box_pool = &mut ctx.accounts.box_pool;
         let prize_pool = &mut ctx.accounts.prize_pool;
 
-        global_pool.remove_box(box_pool.key());
-
-        //  Transfer NFTs to admin wallet
-        let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
-
-        let mut idx = 0;
-        let nfts = &prize_pool.nfts;
-
-        require!(remaining_accounts.len() == nfts.len() * 2, GameError::RemainingAccountCountDismatch);
-
-        for nft in nfts {
-            let src_ata = spl_associated_token_account::get_associated_token_address(
-                &global_pool.key(),
-                &nft.mint_info,
-            );
-            require!(
-                remaining_accounts[idx].key().eq(&src_ata),
-                GameError::SrcAtaDismatch
-            );
-
-            let dest_ata = spl_associated_token_account::get_associated_token_address(
-                &box_pool.admin.key(),
-                &nft.mint_info,
-            );
-            require!(
-                remaining_accounts[idx + 1].key().eq(&dest_ata),
-                GameError::DestAtaDismatch
-            );
-
-            //  Transfer NFT
-            let global_bump = ctx.bumps.global_pool;
-            let seeds = &[GLOBAL_AUTHORITY_SEED.as_bytes(), &[global_bump]];
-            let signer = &[&seeds[..]];
-
-            let cpi_accounts = Transfer {
-                from: remaining_accounts[idx].clone(),
-                to: remaining_accounts[idx + 1].clone(),
-                authority: global_pool.to_account_info(),
-            };
-
-            let token_program = &mut &ctx.accounts.token_program;
-            token::transfer(
-                CpiContext::new_with_signer(
-                    token_program.clone().to_account_info(),
-                    cpi_accounts,
-                    signer,
-                ),
-                1,
-            )?;
-
-            idx += 2;
+        require!(box_pool.sol_amount == 0, GameError::SolBalanceExist);
+        for i in 0..global_pool.token_count as usize {
+            require!(box_pool.token_amount[i] == 0, GameError::TokenBalanceExist);
         }
 
-        prize_pool.nfts.clear();
+        require!(prize_pool.nfts.len() == 0, GameError::NFTBalanceExist);
+
+        global_pool.remove_box(box_pool.key());
 
         Ok(())
     }
@@ -502,6 +453,7 @@ pub mod looties_contract {
         require!(ctx.accounts.admin1.key().to_string() == String::from(ADMIN1), GameError::InvalidAdminAddress);
         require!(ctx.accounts.admin2.key().to_string() == String::from(ADMIN2), GameError::InvalidAdminAddress);
         require!(ctx.accounts.admin3.key().to_string() == String::from(ADMIN3), GameError::InvalidAdminAddress);
+        require!(1 <= open_times && open_times <= 3, GameError::OpenTimeExceed);
 
         msg!("Open box- player: {}, open times: {}", ctx.accounts.player.key(), open_times);
 
@@ -550,7 +502,7 @@ pub mod looties_contract {
             reward_idxs.push(calc_reward(&box_pool.rewards, rand as u16));
         }
 
-        player_pool.reward_idxs = reward_idxs;
+        player_pool.last_reward_idxs = reward_idxs;
         player_pool.box_addr = box_pool.key();
         player_pool.open_times = open_times;
 
@@ -577,7 +529,7 @@ pub mod looties_contract {
         let mut reward_nfts = vec![];
         let mut reward_nft_idxs = vec![];
 
-        for reward_id in &player_pool.reward_idxs {
+        for reward_id in &player_pool.last_reward_idxs {
             let reward = &box_pool.rewards[*reward_id as usize];
             
             match reward.reward_type {
@@ -608,7 +560,7 @@ pub mod looties_contract {
             }
         }
 
-        for reward_id in &player_pool.reward_idxs {
+        for reward_id in &player_pool.last_reward_idxs {
             let reward = &box_pool.rewards[*reward_id as usize];
             
             match reward.reward_type {
