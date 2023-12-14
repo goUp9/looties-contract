@@ -561,7 +561,7 @@ pub mod looties_contract {
      * Claim reward
      * 
      * @remainingAccounts - list of SPL token's ATA(global_pool's ATA, player's ATA) included in game
-     *                    - list of NFT's ATA(global_pool's ATA, player's ATA) included in box
+     *                    - list of NFT's ATA(global_pool's ATA, player's ATA) $open_times per a collection included in box
      */
     pub fn claim_reward<'info>(
         ctx: Context<'_, '_, '_, 'info, ClaimReward<'info>>,

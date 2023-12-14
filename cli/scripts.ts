@@ -41,6 +41,11 @@ const main = async () => {
     );
     console.log('GlobalAuthority: ', globalAuthority.toBase58());
 
+    // let boxPool = new anchor.web3.PublicKey("7RxiU83ApEACnFAd4Wp7gEd9R83SVmBfPvWC8cWdv3hY");
+    // let boxPool = new anchor.web3.PublicKey("FCC4zEUSdAwdHiyvjeYinQKWDRdEfZNR3YzPZ95D1NRf");
+    // let boxPool = new anchor.web3.PublicKey("7GRHddMmWGMSuut9NdvZfcCZG3r4HcPEdNuZYJEeyKn4");
+    let boxPool = new anchor.web3.PublicKey("97i7UZ78FV97ixBkeWscAhvbsKVCujgjkyWcoYXpdNcJ");
+    
     // await initProject(payer.publicKey);
     // super admin: CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ
     // admin : 5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz
@@ -49,8 +54,6 @@ const main = async () => {
     // await initBoxTest();
     // await updateBoxTest(boxPool);
 
-    let boxPool = new anchor.web3.PublicKey("7GRHddMmWGMSuut9NdvZfcCZG3r4HcPEdNuZYJEeyKn4");
-    
     let prizePool = new anchor.web3.PublicKey("EDyyhHVFr1QpG7FahJFDhSTVFmvCtm2rApUHEpxPgJsV");
     // await createTokenWalletForTest(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(20 * 10 ** 9), tokenAAddress);
     // await createTokenWalletForTest(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(20 * 10 ** 9), tokenBAddress);
@@ -75,27 +78,27 @@ const main = async () => {
     // await depositNfts(payer.publicKey, boxPool, [NFTcollection2, NFTcollection2], collection2);
     // await withdrawNfts(payer.publicKey, boxPool, [new anchor.web3.PublicKey("3owqfGtGcnoGapVikreKCFqARGDn5dQqEiStYLSrHeDi")]);
 
-    await openBox(payer.publicKey, boxPool, 5);
+    // await openBox(payer.publicKey, boxPool, 5);
 
     // console.log(await getGlobalPool());
-    // console.log(await getBoxPool(boxPool));
+    console.log(await getBoxPool(boxPool));
     
     console.log("Game Vault");
     
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(SOL_VAULT_SEED)],
-        program.programId
-    );
+    // const [solVault, svBump] = await PublicKey.findProgramAddress(
+    //     [Buffer.from(SOL_VAULT_SEED)],
+    //     program.programId
+    // );
     
-    let balance = await provider.connection.getBalance(solVault);
-    console.log("SOL : ", balance.toString());
-    let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAAddress);
-    let accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
-    console.log("TOken A : ", accountInfo.value.uiAmount);
-    gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenBAddress);
-    accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
-    console.log("TOken B : ", accountInfo.value.uiAmount);
-    console.log("NFTs : ", (await getPrizePool(prizePool)).nfts.map((nft) => nft.mintInfo));
+    // let balance = await provider.connection.getBalance(solVault);
+    // console.log("SOL : ", balance.toString());
+    // let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAAddress);
+    // let accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
+    // console.log("TOken A : ", accountInfo.value.uiAmount);
+    // gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenBAddress);
+    // accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
+    // console.log("TOken B : ", accountInfo.value.uiAmount);
+    // console.log("NFTs : ", (await getPrizePool(prizePool)).nfts.map((nft) => nft.mintInfo));
 }
 
 const initBoxTest = async () => {
@@ -170,13 +173,59 @@ const initBoxTest = async () => {
         },
     ]
 
+    let rewards_2 = [
+        {
+            name: "Hell Case",
+            description: "Hell Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
+            rewardType: 1,
+            chance: 15 * 10 ** 2,
+            sol: new anchor.BN(0.5 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+        {
+            name: "Sussy Case",
+            description: "Sussy Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
+            rewardType: 1,
+            chance: 10 * 10 ** 2,
+            sol: new anchor.BN(0.69 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+        {
+            name: "Mask Case",
+            description: "Mask Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
+            rewardType: 1,
+            chance: 30 * 10 ** 2,
+            sol: new anchor.BN(0.05 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+        {
+            name: "Rio Case 2022",
+            description: "Rio Case 2022",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
+            rewardType: 1,
+            chance: 45 * 10 ** 2,
+            sol: new anchor.BN(0.05 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+    ]
     await initBox(
         payer.publicKey,
         new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
-        "First Box",
-        "This is First Box in Game to test",
-        "https://no_url", new anchor.BN(10 ** 6),
-        rewards,
+        "Radioactive Case",
+        "Radioactive Case",
+        "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
+        rewards_2,
         Keypair.generate().publicKey
     );
 }
@@ -219,37 +268,37 @@ const updateBoxTest = async (boxAddress: PublicKey) => {
             collectionAddress: defaultKey,
         },
         {
+            name: "2 TokenA",
+            description: "reward 2 TokenA",
+            imageUrl: "https://no_url",
+            rewardType: 2,
+            chance: 10 * 10 ** 2,
+            sol: new anchor.BN(0),
+            token: new anchor.BN(2 * 10 ** 6),
+            tokenAddress: tokenAAddress,
+            collectionAddress: defaultKey,
+        },
+        {
             name: "1 TokenB",
             description: "reward 1 TokenB",
             imageUrl: "https://no_url",
             rewardType: 2,
-            chance: 10 * 10 ** 2,
+            chance: 30 * 10 ** 2,
             sol: new anchor.BN(0),
             token: new anchor.BN(1 * 10 ** 6),
             tokenAddress: tokenBAddress,
             collectionAddress: defaultKey,
         },
         {
-            name: "NFT1",
-            description: "NFT1",
+            name: "2 TokenB",
+            description: "reward 2 TokenB",
             imageUrl: "https://no_url",
-            rewardType: 3,
+            rewardType: 2,
             chance: 30 * 10 ** 2,
             sol: new anchor.BN(0),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: NFTcollection1,
-        },
-        {
-            name: "NFT2",
-            description: "NFT2",
-            imageUrl: "",
-            rewardType: 3,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: NFTcollection2,
+            token: new anchor.BN(2 * 10 ** 6),
+            tokenAddress: tokenBAddress,
+            collectionAddress: defaultKey,
         },
     ]
 
