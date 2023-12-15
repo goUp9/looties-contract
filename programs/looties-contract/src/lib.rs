@@ -505,7 +505,7 @@ pub mod looties_contract {
 
         for i in 0..open_times as usize {
             let mut select = false;
-            let reward = &box_pool.rewards[i];
+            let reward = &box_pool.rewards[reward_idxs[i] as usize];
 
             if reward.reward_type == 1 {
                 player_pool.claimable_sol += reward.sol;
@@ -527,7 +527,7 @@ pub mod looties_contract {
                 }
             }
 
-            require!(select == true, GameError::InsufficientFunds);
+            require!(reward.reward_type != 3 || select == true, GameError::InsufficientFunds);
         }
 
         Ok(())

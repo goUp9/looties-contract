@@ -1,7 +1,6 @@
 import { Program, web3 } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
 import { Keypair, ParsedAccountData, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram, Transaction } from "@solana/web3.js";
-import fs from 'fs';
 import { GlobalPool, BoxPool, PrizePool, Reward, PlayerPool } from './types';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 const idl = require('../target/idl/looties_contract.json');
@@ -22,8 +21,7 @@ const provider = anchor.getProvider();
 
 const tokenAAddress = new anchor.web3.PublicKey("2o2CadSEJ9D3RLoqBgL5L6cSuxQWd2ik175igkAACtPB");
 const tokenBAddress = new anchor.web3.PublicKey("HXSWKQVRybmkRZvq8F8bkG2FT2JSqjGeAtnJxvDWrTeM");
-const NFTcollection1 = new anchor.web3.PublicKey("7kZwsnGkJKRkit73yQC96XCzrEDBBzo7iD2s8FME5HtL");
-const NFTcollection2 = new anchor.web3.PublicKey("7pXX8wRpGJzKaq2VPX1vjAXurtzekbfApMnjZuZsEicX");
+const NFTcollection = new anchor.web3.PublicKey("7kZwsnGkJKRkit73yQC96XCzrEDBBzo7iD2s8FME5HtL");
 const admin1 = new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ");
 const admin2 = new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ");
 const admin3 = new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ");
@@ -45,65 +43,56 @@ const main = async () => {
         program.programId
     );
     console.log('GlobalAuthority: ', globalAuthority.toBase58());
+    // super admin  : CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ
+    // admin        : 5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz
+    // player       : Bw6cx4qzWygKDLtbThv8TxESxsUsEXmcv1X4gUPbSycc
 
-    // let boxPool = new anchor.web3.PublicKey("7RxiU83ApEACnFAd4Wp7gEd9R83SVmBfPvWC8cWdv3hY");
-    // let boxPool = new anchor.web3.PublicKey("FCC4zEUSdAwdHiyvjeYinQKWDRdEfZNR3YzPZ95D1NRf");
-    // let boxPool = new anchor.web3.PublicKey("7GRHddMmWGMSuut9NdvZfcCZG3r4HcPEdNuZYJEeyKn4");
-    let boxPool = new anchor.web3.PublicKey("97i7UZ78FV97ixBkeWscAhvbsKVCujgjkyWcoYXpdNcJ");
+    // ===========> methods related to global pool < =========== //
+    // await initProject();
+    // await changeSuperAdmin(new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ"));
+    // await addTokenAddress(tokenAAddress);
+    // console.log(await getGlobalPool());
     
-    // await initProject(payer.publicKey);
-    // super admin: CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ
-    // admin : 5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz
-    // await changeSuperAdmin(payer.publicKey, new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ"));
-    // await addTokenAddress(payer.publicKey, tokenAAddress);
+    let boxPool1 = new web3.PublicKey("6DJhBvvxenGKbz2uFXEgmQdRcbLoB3EJZ6Acwdqk2QD7");
+    let boxPool2 = new web3.PublicKey("gJPEXEh9xagJJ8iivqeBEjfpqP8BDLfgkeaBVg4QzDG");
+
+    // ===========> methods related to box pool < =========== //
     // await initBoxTest();
-    // await updateBoxTest(boxPool);
-
-    let prizePool = new anchor.web3.PublicKey("EDyyhHVFr1QpG7FahJFDhSTVFmvCtm2rApUHEpxPgJsV");
-    // await createTokenWalletForTest(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(20 * 10 ** 9), tokenAAddress);
-    // await createTokenWalletForTest(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(20 * 10 ** 9), tokenBAddress);
-    // await deposit(payer.publicKey, boxPool, new anchor.BN(20 * 10 ** 9), new anchor.BN(0 * 10 ** 9), tokenAAddress);
-    // await deposit(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(20 * 10 ** 9), tokenBAddress);
-    // await withdraw(payer.publicKey, boxPool, new anchor.BN(10 ** 9), new anchor.BN(0), tokenAAddress);
-    // await withdraw(payer.publicKey, boxPool, new anchor.BN(0), new anchor.BN(10 * 10 ** 9), tokenBAddress);
-
-    // let collection1 = [
-    //     new anchor.web3.PublicKey("3owqfGtGcnoGapVikreKCFqARGDn5dQqEiStYLSrHeDi"),
+    // await updateBoxTest(boxPool1);
+    // await changeAdmin(boxPool2, new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"))
+    // await removeBox(boxPool2);
+    // await deposit(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0 * 10 ** 6), tokenAAddress);
+    // await withdraw(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0), tokenBAddress);
+    // console.log(await getBoxPool(boxPool2));
+    
+    // let nfts = [
     //     new anchor.web3.PublicKey("9ARBwxAsTtNiJv3UYjrvNvJH81HUvqCSd7TeThNiTmKi"),
     //     new anchor.web3.PublicKey("4TV9nj18LTdnaRrPweGR4ZAuo9FzyxYrSwoHtnA7p6ny"),
     // ];
-    // let collection2 = [
-    //     new anchor.web3.PublicKey("6bhuV5vizoeheBZ5cPV3rP3bqwFQoPpZZFQoAphvps93"),
-    //     new anchor.web3.PublicKey("H9oLT7uK1njJESsDFr1M7oA8ASnZYqvN6Qvc9rfFjQ1f"),
-    // ];
-    // await createNFTsAccountForTest(payer.publicKey, collection1);
-    // await createNFTsAccountForTest(payer.publicKey, collection2);
-
-    // await depositNfts(payer.publicKey, boxPool, [NFTcollection1, NFTcollection1, NFTcollection1], collection1);
-    // await depositNfts(payer.publicKey, boxPool, [NFTcollection2, NFTcollection2], collection2);
-    // await withdrawNfts(payer.publicKey, boxPool, [new anchor.web3.PublicKey("3owqfGtGcnoGapVikreKCFqARGDn5dQqEiStYLSrHeDi")]);
-
-    // await openBox(payer.publicKey, boxPool, 5);
-
-    // console.log(await getGlobalPool());
-    console.log(await getBoxPool(boxPool));
     
-    console.log("Game Vault");
+    // await depositNfts(boxPool2, NFTcollection, nfts);
+    // await withdrawNfts(boxPool2, nfts);
+    // console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
+
     
-    // const [solVault, svBump] = await PublicKey.findProgramAddress(
-    //     [Buffer.from(SOL_VAULT_SEED)],
-    //     program.programId
-    // );
-    
-    // let balance = await provider.connection.getBalance(solVault);
-    // console.log("SOL : ", balance.toString());
-    // let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAAddress);
-    // let accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
-    // console.log("TOken A : ", accountInfo.value.uiAmount);
-    // gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenBAddress);
-    // accountInfo = await provider.connection.getTokenAccountBalance(gameTokenAccount);
-    // console.log("TOken B : ", accountInfo.value.uiAmount);
-    // console.log("NFTs : ", (await getPrizePool(prizePool)).nfts.map((nft) => nft.mintInfo));
+    // ===========> methods related to player pool < =========== //
+
+    // await initPlayer();
+    // await openBox(boxPool2, 3);
+    // await claimReward();
+    // console.log(await getPlayerPool());
+
+    /*
+        when player open the box, you should call functions step by step.
+        1. await openBox(boxPool2, 3);
+        2. get reward indexes(you can display rewards with index)
+            let lastRewardIdxs = (await getPlayerPool()).lastRewardIdxs;
+            lastRewardIdxs.map((reward_idx) => {
+                console.log(reward_idx);
+            })
+        3. await claimReward();
+          
+    */
 }
 
 /////////////////////
@@ -115,72 +104,109 @@ const initBoxTest = async () => {
 
     let rewards = [
         {
-            name: "1 SOL",
-            description: "reward 1 sol",
-            imageUrl: "https://no_url",
+            name: "Hell Case",
+            description: "Hell Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
             rewardType: 1,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(1 * 10 ** 6),
+            chance: 15 * 10 ** 2,
+            sol: new anchor.BN(0.5 * 10 ** 9),
             token: new anchor.BN(0),
             tokenAddress: defaultKey,
             collectionAddress: defaultKey,
         },
         {
-            name: "2 SOL",
-            description: "reward 2 sol",
-            imageUrl: "https://no_url",
+            name: "Sussy Case",
+            description: "Sussy Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
             rewardType: 1,
             chance: 10 * 10 ** 2,
-            sol: new anchor.BN(2 * 10 ** 6),
+            sol: new anchor.BN(0.69 * 10 ** 9),
             token: new anchor.BN(0),
             tokenAddress: defaultKey,
             collectionAddress: defaultKey,
         },
         {
-            name: "1 TokenA",
-            description: "reward 1 TokenA",
-            imageUrl: "https://no_url",
+            name: "Mask Case",
+            description: "Mask Case",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
+            rewardType: 1,
+            chance: 30 * 10 ** 2,
+            sol: new anchor.BN(0.05 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+        {
+            name: "Rio Case 2022",
+            description: "Rio Case 2022",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
+            rewardType: 1,
+            chance: 45 * 10 ** 2,
+            sol: new anchor.BN(0.05 * 10 ** 9),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+    ]
+
+    let rewards_2 = [
+        {
+            name: "0.005 SOL",
+            description: "0.005 SOL",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
+            rewardType: 1,
+            chance: 25 * 10 ** 2,
+            sol: new anchor.BN(5 * 10 ** 6),
+            token: new anchor.BN(0),
+            tokenAddress: defaultKey,
+            collectionAddress: defaultKey,
+        },
+        {
+            name: "1000 TokenA",
+            description: "1000 TokenA",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
             rewardType: 2,
-            chance: 10 * 10 ** 2,
+            chance: 25 * 10 ** 2,
             sol: new anchor.BN(0),
-            token: new anchor.BN(1 * 10 ** 6),
+            token: new anchor.BN(1000),
             tokenAddress: tokenAAddress,
             collectionAddress: defaultKey,
         },
         {
-            name: "1 TokenB",
-            description: "reward 1 TokenB",
-            imageUrl: "https://no_url",
+            name: "1000 TokenB",
+            description: "1000 TokenB",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
             rewardType: 2,
-            chance: 10 * 10 ** 2,
+            chance: 25 * 10 ** 2,
             sol: new anchor.BN(0),
-            token: new anchor.BN(1 * 10 ** 6),
+            token: new anchor.BN(1000),
             tokenAddress: tokenBAddress,
             collectionAddress: defaultKey,
         },
         {
-            name: "NFT1",
-            description: "NFT1",
-            imageUrl: "https://no_url",
+            name: "NFT",
+            description: "NFT",
+            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
             rewardType: 3,
-            chance: 30 * 10 ** 2,
+            chance: 25 * 10 ** 2,
             sol: new anchor.BN(0),
             token: new anchor.BN(0),
             tokenAddress: defaultKey,
-            collectionAddress: NFTcollection1,
-        },
-        {
-            name: "NFT2",
-            description: "NFT2",
-            imageUrl: "",
-            rewardType: 3,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: NFTcollection2,
+            collectionAddress: NFTcollection,
         },
     ]
+
+    await initBox(
+        new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
+        "Complex Case",
+        "Complex Case",
+        "https://looties-next-app.vercel.app/assets/cases/case-1.svg", new anchor.BN(0.11 * 10 ** 9),
+        rewards_2,
+    );
+}
+
+const updateBoxTest = async (boxAddress: PublicKey) => {
+    let defaultKey = PublicKey.default;
 
     let rewards_2 = [
         {
@@ -228,93 +254,13 @@ const initBoxTest = async () => {
             collectionAddress: defaultKey,
         },
     ]
-    await initBox(
-        new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
+
+    await updateBox(
+        boxAddress,
         "Radioactive Case",
         "Radioactive Case",
         "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
         rewards_2,
-    );
-}
-
-const updateBoxTest = async (boxAddress: PublicKey) => {
-    let defaultKey = PublicKey.default;
-
-    let rewards = [
-        {
-            name: "1 SOL",
-            description: "reward 1 sol",
-            imageUrl: "https://no_url",
-            rewardType: 1,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(1 * 10 ** 6),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "2 SOL",
-            description: "reward 2 sol",
-            imageUrl: "https://no_url",
-            rewardType: 1,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(2 * 10 ** 6),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "1 TokenA",
-            description: "reward 1 TokenA",
-            imageUrl: "https://no_url",
-            rewardType: 2,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(1 * 10 ** 6),
-            tokenAddress: tokenAAddress,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "2 TokenA",
-            description: "reward 2 TokenA",
-            imageUrl: "https://no_url",
-            rewardType: 2,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(2 * 10 ** 6),
-            tokenAddress: tokenAAddress,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "1 TokenB",
-            description: "reward 1 TokenB",
-            imageUrl: "https://no_url",
-            rewardType: 2,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(1 * 10 ** 6),
-            tokenAddress: tokenBAddress,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "2 TokenB",
-            description: "reward 2 TokenB",
-            imageUrl: "https://no_url",
-            rewardType: 2,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(2 * 10 ** 6),
-            tokenAddress: tokenBAddress,
-            collectionAddress: defaultKey,
-        },
-    ]
-
-    await updateBox(
-        boxAddress,
-        "First Box",
-        "This is First Box in Game to test",
-        "https://no_url", new anchor.BN(10 ** 6),
-        rewards,
     );
 }
 
@@ -507,6 +453,22 @@ export const addTokenAddress = async (
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
+
+    // make associated token account for PDA
+    {
+        let tx = new Transaction();
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            globalAuthority,
+            [tokenAddress]
+        );
+    
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
 
     let txId = await program.methods
         .addTokenAddress(tokenAddress)
@@ -712,6 +674,20 @@ export const deposit = async (
         program.programId
     );
 
+    {
+        let tx = new Transaction();
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            authority,
+            [tokenAddress]
+        );
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
+
     let adminTokenAccount = await getAssociatedTokenAccount(authority, tokenAddress);
     let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
 
@@ -761,6 +737,20 @@ export const withdraw = async (
         program.programId
     );
 
+    {
+        let tx = new Transaction();
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            authority,
+            [tokenAddress]
+        );
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
+
     let adminTokenAccount = await getAssociatedTokenAccount(authority, tokenAddress);
     let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
 
@@ -796,6 +786,7 @@ export const depositNfts = async (
     collection: PublicKey,
     nfts: PublicKey[],
 ) => {
+    console.log('==> deposit NFTs')
     const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
@@ -805,6 +796,20 @@ export const depositNfts = async (
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
+
+    {
+        let tx = new Transaction();
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            globalAuthority,
+            nfts
+        );
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
 
     let remainingAccounts = [];
 
@@ -840,6 +845,7 @@ export const withdrawNfts = async (
     boxAddress: PublicKey,
     nfts: PublicKey[],
 ) => {
+    console.log('==> withdraw NFTs');
     const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
@@ -849,6 +855,20 @@ export const withdrawNfts = async (
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
+
+    {
+        let tx = new Transaction();
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            authority,
+            nfts
+        );
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
 
     let remainingAccounts = [];
 
@@ -877,8 +897,8 @@ export const withdrawNfts = async (
  * 
  * @access  - player
  */
-export const initializePlayerPool = async () => {
-    console.log('==> initializePlayerPool : ', authority.toString());
+export const initPlayer = async () => {
+    console.log('==> initPlayer : ', authority.toString());
 
     const [playerAuthority, pBump] = await PublicKey.findProgramAddress(
         [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
@@ -886,7 +906,7 @@ export const initializePlayerPool = async () => {
     );
 
     let txId = await program.methods
-        .withdrawNfts()
+        .initPlayer()
         .accounts({
             player: authority,
             playerPool: playerAuthority,
@@ -944,6 +964,82 @@ export const openBox = async (
             admin3,
             systemProgram: SystemProgram.programId,
         })
+        .rpc();
+
+    console.log("txHash =", txId);    
+}
+
+
+/**
+ * Open box
+ * 
+ * @access  - player
+ */
+export const claimReward = async () => {
+    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
+        program.programId
+    );
+
+    const [solVault, svBump] = await PublicKey.findProgramAddress(
+        [Buffer.from(SOL_VAULT_SEED)],
+        program.programId
+    );
+
+    const [playerAuthority, pBump2] = await PublicKey.findProgramAddress(
+        [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
+        program.programId
+    );
+
+    const globalPool = await getGlobalPool();
+    const playerPool = await getPlayerPool();
+
+    console.log(playerPool)
+    console.log(playerPool.boxAddr);
+
+    const [prizeAuthority, pBump1] = await PublicKey.findProgramAddress(
+        [Buffer.from(PRIZE_POOL_SEED), playerPool.boxAddr.toBuffer()],
+        program.programId
+    );
+    
+    let tokenAddresses = globalPool.tokenAddress.concat(playerPool.claimableNfts);
+
+    {
+        let tx = new Transaction();
+
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            authority,
+            tokenAddresses
+        );
+        if (instructions.length > 0) {
+            instructions.map((ix) => tx.add(ix));
+            await provider.sendAndConfirm(tx);
+        }
+    }
+
+    let remainingAccounts = [];
+
+    for (var nft of tokenAddresses) {
+        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
+        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+    }
+
+
+    let txId = await program.methods
+        .claimReward()
+        .accounts({
+            player: authority,
+            globalPool: globalAuthority,
+            boxPool: playerPool.boxAddr,
+            prizePool: prizeAuthority,
+            playerPool: playerAuthority,
+            solVault,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .remainingAccounts(remainingAccounts)
         .rpc();
 
     console.log("txHash =", txId);    

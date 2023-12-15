@@ -47,7 +47,7 @@ export interface NftInfo {
 
 export interface PlayerPool {
     player: PublicKey,
-    box_addr: PublicKey,
+    boxAddr: PublicKey,
     openTimes: number,
     lastRewardIdxs: number[],
     claimableSol: anchor.BN,
