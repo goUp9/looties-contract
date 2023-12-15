@@ -77,7 +77,7 @@ const main = async () => {
     
     // ===========> methods related to player pool < =========== //
 
-    // await initPlayer();
+    // await initPlayer();                              // This function must be called when the user registers the platform.
     // await openBox(boxPool2, 3);
     // await claimReward();
     // console.log(await getPlayerPool());
@@ -91,7 +91,6 @@ const main = async () => {
                 console.log(reward_idx);
             })
         3. await claimReward();
-          
     */
 }
 
@@ -262,118 +261,6 @@ const updateBoxTest = async (boxAddress: PublicKey) => {
         "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
         rewards_2,
     );
-}
-
-const createTokenWalletForTest = async (
-    admin: PublicKey,
-    boxAddress: PublicKey,
-    solAmount: anchor.BN,
-    tokenAmount: anchor.BN,
-    tokenAddress: PublicKey,
-) => {
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
-        program.programId
-    );
-
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(SOL_VAULT_SEED)],
-        program.programId
-    );
-
-    console.log("|______________________________");
-    let adminTokenAccount = await getAssociatedTokenAccount(admin, tokenAddress);
-    console.log("|______________________________");
-    let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
-    console.log("|______________________________");
-
-    {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            admin,
-            admin,
-            [tokenAddress]
-        );
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
-        }
-    }
-    console.log("|______________________________");
-
-    {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            admin,
-            globalAuthority,
-            [tokenAddress]
-        );
-    
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
-        }
-    }
-
-    let depositAmount = 2 * tokenAmount.toNumber();
-
-    console.log("|______________________________");
-
-    let accountInfo = await provider.connection.getTokenAccountBalance(adminTokenAccount);
-    console.log(accountInfo);
-
-    let tx = new Transaction();
-    tx.add(Token.createMintToInstruction(
-        TOKEN_PROGRAM_ID,
-        tokenAddress,
-        adminTokenAccount,
-        payer.publicKey,
-        [],
-        depositAmount,
-    ));
-    await provider.sendAndConfirm(tx);
-    accountInfo = await provider.connection.getTokenAccountBalance(adminTokenAccount);
-    console.log(accountInfo);
-}
-
-const createNFTsAccountForTest = async (
-    admin: PublicKey,
-    nfts: PublicKey[],
-) => {
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
-        program.programId
-    );
-
-    {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            admin,
-            admin,
-            nfts
-        );
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
-        }
-    }
-
-    {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            admin,
-            globalAuthority,
-            nfts
-        );
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
-        }
-    }
 }
 
 //////////////////////////////////////////////////
