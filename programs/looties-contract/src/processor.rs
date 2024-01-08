@@ -3,7 +3,7 @@ use solana_program::program::{invoke, invoke_signed};
 use solana_program::entrypoint::ProgramResult;
 use sha2::{Digest, Sha256};
 
-use crate::account::Reward;
+use crate::state::Reward;
 
 // transfer sol
 pub fn sol_transfer_with_signer<'info>(

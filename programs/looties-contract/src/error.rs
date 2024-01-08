@@ -81,4 +81,7 @@ pub enum GameError {
     /// NFT balance exist in the box
     #[msg("NFT balance exist in the box")]
     NFTBalanceExist,
+    /// Invalid Authority
+    #[msg("Invalid Authority")]
+    InvalidAuthority,
 }
