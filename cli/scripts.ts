@@ -69,17 +69,17 @@ const main = async () => {
     // console.log(await getBoxPool(boxPool2));
 
     let nfts = [
-        new anchor.web3.PublicKey("5CWXXyiGxHAmaMT8osSin9r8JjCQcx9KCquPov2MqbSk"),
-        new anchor.web3.PublicKey("2jMM1vZyJwMKj2nY4tu6ffPGUTZHb1ffdfnBDZEcQKN2"),
-        new anchor.web3.PublicKey("A9aY7ent7qTarFEmVFkhB7VQijHUwnUgAy2sa8uaucMT"),
-        new anchor.web3.PublicKey("FxRbLQtzAkXhEQwYjyNSv938cJuKTF4sh49j9fBJoatY"),
-        new anchor.web3.PublicKey("8rPveKTqmpFK21QUpZufiYBJRF2nXSceHnL58Cyxp6Fh"),
-        new anchor.web3.PublicKey("7dz1vhb2DcRVBm8473efNCiGKdXMSziPXkVN8v1LgLk1"),
-        new anchor.web3.PublicKey("8ijMYJY5VBBWmeCxdmkPsrozGHMcxEwdPt2SSJJGP4uk"),
-        new anchor.web3.PublicKey("7MXCJRvL6Ken19UTkEsB6oS8SwcTZSsm4tbJRNHuXaiG"),
-        new anchor.web3.PublicKey("8g4aDKLrxBP2kuSxym4s51S8wv4KJukirMrAmPTAPkLK"),
-        new anchor.web3.PublicKey("7mC1u2PwmRXbKJRGqjytXcPP4Wwh8PTM2p2JGoecthKT"),
-        new anchor.web3.PublicKey("4kxKTYmhMSMFF5cjk2CR4XFkw5bFLWBrLfYfo2yFwnKg"),
+        // new anchor.web3.PublicKey("5CWXXyiGxHAmaMT8osSin9r8JjCQcx9KCquPov2MqbSk"),
+        // new anchor.web3.PublicKey("2jMM1vZyJwMKj2nY4tu6ffPGUTZHb1ffdfnBDZEcQKN2"),
+        // new anchor.web3.PublicKey("A9aY7ent7qTarFEmVFkhB7VQijHUwnUgAy2sa8uaucMT"),
+        // new anchor.web3.PublicKey("FxRbLQtzAkXhEQwYjyNSv938cJuKTF4sh49j9fBJoatY"),
+        // new anchor.web3.PublicKey("8rPveKTqmpFK21QUpZufiYBJRF2nXSceHnL58Cyxp6Fh"),
+        // new anchor.web3.PublicKey("7dz1vhb2DcRVBm8473efNCiGKdXMSziPXkVN8v1LgLk1"),
+        // new anchor.web3.PublicKey("8ijMYJY5VBBWmeCxdmkPsrozGHMcxEwdPt2SSJJGP4uk"),
+        // new anchor.web3.PublicKey("7MXCJRvL6Ken19UTkEsB6oS8SwcTZSsm4tbJRNHuXaiG"),
+        // new anchor.web3.PublicKey("8g4aDKLrxBP2kuSxym4s51S8wv4KJukirMrAmPTAPkLK"),
+        // new anchor.web3.PublicKey("7mC1u2PwmRXbKJRGqjytXcPP4Wwh8PTM2p2JGoecthKT"),
+        // new anchor.web3.PublicKey("4kxKTYmhMSMFF5cjk2CR4XFkw5bFLWBrLfYfo2yFwnKg"),
     ];
     
     // await depositNfts(boxPool2, NFTcollection, nfts);
@@ -89,8 +89,8 @@ const main = async () => {
     // ===========> methods related to player pool < =========== //
 
     // await openBox(boxPool2, 3);
-    await claimReward();
-    console.log(await getPlayerPool());
+    // await claimReward();
+    // console.log(await getPlayerPool());
 
     /*
         when player open the box, you should call functions step by step.

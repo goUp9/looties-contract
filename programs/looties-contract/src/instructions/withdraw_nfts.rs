@@ -52,6 +52,7 @@ pub fn withdraw_nfts_handler<'info>(
 
   //  Transfer NFTs to admin wallet
   let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+  prize_pool.nfts.retain(|nft| nft.rewarded == false);
 
   require!(remaining_accounts.len() == nfts.len() * 2, GameError::RemainingAccountCountDismatch);
 
