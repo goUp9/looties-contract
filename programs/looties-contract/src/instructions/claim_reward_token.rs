@@ -52,6 +52,8 @@ pub fn claim_reward_token_handler<'info>(
   
   require!(remaining_accounts.len() == (global_pool.token_count as usize) * 2, GameError::RemainingAccountCountDismatch);
 
+  player_pool.rewards.clear();
+
   let sol_vault_bump = ctx.bumps.sol_vault;
   
   sol_transfer_with_signer(

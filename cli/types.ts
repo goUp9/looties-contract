@@ -47,10 +47,15 @@ export interface NftInfo {
 
 export interface PlayerPool {
     player: PublicKey,
-    boxAddr: PublicKey,
-    openTimes: number,
-    lastRewardIdxs: number[],
+    isInitialized: boolean,
+    rewards: GameData[],
     claimableSol: anchor.BN,
     claimableToken: anchor.BN[],
     claimableNfts: PublicKey[],
+}
+
+export interface GameData {
+    boxAddr: PublicKey,
+    openTimes: number,
+    rewardIdxs: number[],
 }

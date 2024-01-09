@@ -9,7 +9,7 @@ const PROGRAM_ID = "t1ynC7jhTJfZD8idR58Yz6EW8XiwajKzNXusf2tguBV";
 const BOX_AUTHORITY_SEED = "box-authority";
 const GLOBAL_AUTHORITY_SEED = "global-authority";
 const PRIZE_POOL_SEED = "prize-pool";
-const PLAYER_POOL_SEED = "player-pool";
+const PLAYER_POOL_SEED = "player-pool-2";
 const SOL_VAULT_SEED = "sol-vault";
 
 anchor.setProvider(anchor.AnchorProvider.local(web3.clusterApiUrl('devnet')));
@@ -51,36 +51,46 @@ const main = async () => {
     // await initProject();
     // await changeSuperAdmin(new anchor.web3.PublicKey("CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ"));
     // await addTokenAddress(tokenAAddress);
-    // console.log(await getGlobalPool());
+    console.log(await getGlobalPool());
     
-    let boxPool1 = new web3.PublicKey("6DJhBvvxenGKbz2uFXEgmQdRcbLoB3EJZ6Acwdqk2QD7");
-    let boxPool2 = new web3.PublicKey("gJPEXEh9xagJJ8iivqeBEjfpqP8BDLfgkeaBVg4QzDG");
+    let boxPool1 = new web3.PublicKey("BMPS7jTJ9uyTU8bmnjFbMFXmX3bkvQ5y65bfhNAQGVC4");
+    let boxPool2 = new web3.PublicKey("CkEte9nktCbyLqEVjzgJZYFWABLAACYLh77WYJKLhxZk");
 
     // ===========> methods related to box pool < =========== //
     // await initBoxTest();
     // await updateBoxTest(boxPool1);
     // await changeAdmin(boxPool2, new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"))
-    // await removeBox(boxPool2);
+    // await removeBox(boxPool1);
     // await deposit(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0 * 10 ** 6), tokenAAddress);
     // await withdraw(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0), tokenBAddress);
-    console.log(await getBoxPool(boxPool1));
+    // await deposit_sol(boxPool2, new anchor.BN(4853600000));
+    // await deposit_token(boxPool2, new anchor.BN(997000), tokenAAddress);
+    // await deposit_token(boxPool2, new anchor.BN(993000), tokenBAddress);
+    // console.log(await getBoxPool(boxPool2));
 
-    // let nfts = [
-    //     new anchor.web3.PublicKey("9ARBwxAsTtNiJv3UYjrvNvJH81HUvqCSd7TeThNiTmKi"),
-    //     new anchor.web3.PublicKey("4TV9nj18LTdnaRrPweGR4ZAuo9FzyxYrSwoHtnA7p6ny"),
-    // ];
+    let nfts = [
+        new anchor.web3.PublicKey("5CWXXyiGxHAmaMT8osSin9r8JjCQcx9KCquPov2MqbSk"),
+        new anchor.web3.PublicKey("2jMM1vZyJwMKj2nY4tu6ffPGUTZHb1ffdfnBDZEcQKN2"),
+        new anchor.web3.PublicKey("A9aY7ent7qTarFEmVFkhB7VQijHUwnUgAy2sa8uaucMT"),
+        new anchor.web3.PublicKey("FxRbLQtzAkXhEQwYjyNSv938cJuKTF4sh49j9fBJoatY"),
+        new anchor.web3.PublicKey("8rPveKTqmpFK21QUpZufiYBJRF2nXSceHnL58Cyxp6Fh"),
+        new anchor.web3.PublicKey("7dz1vhb2DcRVBm8473efNCiGKdXMSziPXkVN8v1LgLk1"),
+        new anchor.web3.PublicKey("8ijMYJY5VBBWmeCxdmkPsrozGHMcxEwdPt2SSJJGP4uk"),
+        new anchor.web3.PublicKey("7MXCJRvL6Ken19UTkEsB6oS8SwcTZSsm4tbJRNHuXaiG"),
+        new anchor.web3.PublicKey("8g4aDKLrxBP2kuSxym4s51S8wv4KJukirMrAmPTAPkLK"),
+        new anchor.web3.PublicKey("7mC1u2PwmRXbKJRGqjytXcPP4Wwh8PTM2p2JGoecthKT"),
+        new anchor.web3.PublicKey("4kxKTYmhMSMFF5cjk2CR4XFkw5bFLWBrLfYfo2yFwnKg"),
+    ];
     
     // await depositNfts(boxPool2, NFTcollection, nfts);
     // await withdrawNfts(boxPool2, nfts);
-    console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
-
+    // console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
     
     // ===========> methods related to player pool < =========== //
 
-    // await initPlayer();                              // This function must be called when the user registers the platform.
     // await openBox(boxPool2, 3);
-    // await claimReward();
-    // console.log(await getPlayerPool());
+    await claimReward();
+    console.log(await getPlayerPool());
 
     /*
         when player open the box, you should call functions step by step.
@@ -147,6 +157,14 @@ const initBoxTest = async () => {
             collectionAddress: defaultKey,
         },
     ]
+
+    await initBox(
+        new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
+        "Radioactive Case",
+        "Radioactive Case",
+        "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
+        rewards,
+    );
 
     let rewards_2 = [
         {
@@ -552,7 +570,7 @@ export const deposit_sol = async (
     );
 
     let txId = await program.methods
-        .deposit_sol(solAmount)
+        .depositSol(solAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
@@ -590,7 +608,7 @@ export const withdraw_sol = async (
     );
 
     let txId = await program.methods
-        .withdraw_sol(solAmount)
+        .withdrawSol(solAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
@@ -628,7 +646,7 @@ export const deposit_token = async (
     let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
 
     let txId = await program.methods
-        .deposit_token(tokenAmount)
+        .depositToken(tokenAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
@@ -683,7 +701,7 @@ export const withdraw_token = async (
     let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
 
     let txId = await program.methods
-        .withdraw_token(tokenAmount)
+        .withdrawToken(tokenAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
@@ -724,44 +742,43 @@ export const depositNfts = async (
         program.programId
     );
 
-    const nfts_array = [];
-    for (let i = 0; i < nfts.length; i += 5) {
-        nfts_array.push(nfts.slice(i, i + 5));
-    }
-
     {
-        let txs = [];
-        for (let i = 0; i < nfts_array.length; i ++) {
-            let tx = new Transaction();
-            let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-                solConnection,
-                authority,
-                globalAuthority,
-                nfts_array[i]
-            );
-            if (instructions.length > 0) {
-                instructions.map((ix) => tx.add(ix));
+        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+            solConnection,
+            authority,
+            globalAuthority,
+            nfts
+        );
+        if (instructions.length > 0) {
+            let txs = [];
+            let step = 7;
+            for (let i = 0; i < instructions.length; i += step) {
+                let tx = new Transaction();
+                instructions.slice(i, i + step).map((ix) => tx.add(ix));
                 txs.push({
                     tx: tx,
                 });
             }
-        }
-        if (txs.length > 0) {
-            await provider.sendAll(txs);
+            let txIds = await provider.sendAll(txs);
+            console.log("txIds: ", txIds);
         }
     }
 
+
     let txs = [];
-    for (let i = 0; i < nfts_array.length; i ++) {
+    let step = 5;
+    for (let i = 0; i < nfts.length; i += step) {
+        let tempNfts = nfts.slice(i, i + step);
+
         let remainingAccounts = [];
 
-        for (var nft of nfts_array[i]) {
+        for (var nft of tempNfts) {
             remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
             remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
         }
 
         let tx = await program.methods
-            .depositNfts(collection, nfts_array[i])
+            .depositNfts(collection, tempNfts)
             .accounts({
                 admin: authority,
                 globalPool: globalAuthority,
@@ -777,7 +794,8 @@ export const depositNfts = async (
         });
     }
 
-    await provider.sendAll(txs);
+    let txIds = await provider.sendAll(txs);
+    console.log("txIds: ", txIds);
 }
 
 /**
@@ -793,6 +811,7 @@ export const withdrawNfts = async (
     nfts: PublicKey[],
 ) => {
     console.log('==> withdraw NFTs');
+
     const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
@@ -804,7 +823,6 @@ export const withdrawNfts = async (
     );
 
     {
-        let tx = new Transaction();
         let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
             solConnection,
             authority,
@@ -812,31 +830,50 @@ export const withdrawNfts = async (
             nfts
         );
         if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
+            let txs = [];
+            let step = 7;
+            for (let i = 0; i < instructions.length; i += step) {
+                let tx = new Transaction();
+                instructions.slice(i, i + step).map((ix) => tx.add(ix));
+                txs.push({
+                    tx: tx,
+                });
+            }
+            let txIds = await provider.sendAll(txs);
+            console.log("txIds: ", txIds);
         }
     }
 
-    let remainingAccounts = [];
+    let txs = [];
+    let step = 5;
+    for (let i = 0; i < nfts.length; i += step) {
+        let tempNfts = nfts.slice(i, i + step)
+        let remainingAccounts = [];
 
-    for (var nft of nfts) {
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+        for (var nft of tempNfts) {
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+        }
+
+        let tx = await program.methods
+            .withdrawNfts(tempNfts)
+            .accounts({
+                admin: authority,
+                globalPool: globalAuthority,
+                boxPool: boxAddress,
+                prizePool: prizeAuthority,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .remainingAccounts(remainingAccounts)
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
     }
 
-    let txId = await program.methods
-        .withdrawNfts(nfts)
-        .accounts({
-            admin: authority,
-            globalPool: globalAuthority,
-            boxPool: boxAddress,
-            prizePool: prizeAuthority,
-            tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .remainingAccounts(remainingAccounts)
-        .rpc();
-
-    console.log("txHash =", txId);    
+    let txIds = await provider.sendAll(txs);
+    console.log("txIds: ", txIds);
 }
 
 /**
@@ -914,19 +951,9 @@ export const claimReward = async () => {
     const globalPool = await getGlobalPool();
     const playerPool = await getPlayerPool();
 
-    console.log(playerPool)
-    console.log(playerPool.boxAddr);
-
-    const [prizeAuthority, pBump1] = PublicKey.findProgramAddressSync(
-        [Buffer.from(PRIZE_POOL_SEED), playerPool.boxAddr.toBuffer()],
-        program.programId
-    );
-    
     let tokenAddresses = globalPool.tokenAddress.concat(playerPool.claimableNfts);
 
     {
-        let tx = new Transaction();
-
         let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
             solConnection,
             authority,
@@ -934,35 +961,83 @@ export const claimReward = async () => {
             tokenAddresses
         );
         if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
+            let txs = [];
+            let step = 7;
+            for (let i = 0; i < instructions.length; i += step) {
+                let tx = new Transaction();
+                instructions.slice(i, i + step).map((ix) => tx.add(ix));
+                txs.push({
+                    tx: tx,
+                });
+            }
+            let txIds = await provider.sendAll(txs);
+            console.log("txIds: ", txIds);
         }
     }
 
-    let remainingAccounts = [];
+    let txs = [];
+    // claim tokens
+    {
+        let remainingAccounts = [];
 
-    for (var nft of tokenAddresses) {
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+        for (var token of globalPool.tokenAddress) {
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, token), isSigner: false, isWritable: true })
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, token), isSigner: false, isWritable: true })
+        }
+    
+        let tx = await program.methods
+            .claimRewardToken()
+            .accounts({
+                player: authority,
+                globalPool: globalAuthority,
+                playerPool: playerAuthority,
+                solVault,
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .remainingAccounts(remainingAccounts)
+            .transaction();
+        
+        txs.push({
+            tx: tx,
+        });
     }
 
+    // claim nfts
+    {
+        let step = 7;
+        for (let i = 0; i < playerPool.claimableNfts.length; i += step) {
+            const nfts = playerPool.claimableNfts.slice(i, i + step);
 
-    let txId = await program.methods
-        .claimReward()
-        .accounts({
-            player: authority,
-            globalPool: globalAuthority,
-            boxPool: playerPool.boxAddr,
-            prizePool: prizeAuthority,
-            playerPool: playerAuthority,
-            solVault,
-            systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .remainingAccounts(remainingAccounts)
-        .rpc();
+            let remainingAccounts = [];
 
-    console.log("txHash =", txId);    
+            for (var nft of nfts) {
+                remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
+                remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+            }
+    
+            let tx = await program.methods
+                .claimRewardNfts(nfts)
+                .accounts({
+                    player: authority,
+                    globalPool: globalAuthority,
+                    playerPool: playerAuthority,
+                    systemProgram: SystemProgram.programId,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .remainingAccounts(remainingAccounts)
+                .transaction();
+
+            txs.push({
+                tx: tx,
+            })
+        }
+    }
+
+    if (txs.length > 0) {
+        let txIds = await provider.sendAll(txs);
+        console.log("txIds: ", txIds);
+    }
 }
 
 export const getGlobalPool = async (): Promise<GlobalPool | null> => {

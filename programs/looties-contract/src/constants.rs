@@ -14,7 +14,7 @@ pub const CHANCE_SUM: u16 = 10_000;
 
 pub const BOX_AUTHORITY_SEED: &str = "box-authority";
 pub const GLOBAL_AUTHORITY_SEED: &str = "global-authority";
-pub const PLAYER_POOL_SEED: &str = "player-pool";
+pub const PLAYER_POOL_SEED: &str = "player-pool-2";
 pub const PRIZE_POOL_SEED: &str = "prize-pool";
 pub const SOL_VAULT_SEED: &str = "sol-vault";
 

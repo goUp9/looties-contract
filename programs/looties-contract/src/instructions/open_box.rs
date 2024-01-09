@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::{
-  constants::{GLOBAL_AUTHORITY_SEED, PRIZE_POOL_SEED, PLAYER_POOL_SEED, SOL_VAULT_SEED, ADMIN1, ADMIN2, ADMIN3},
+  constants::{GLOBAL_AUTHORITY_SEED, PRIZE_POOL_SEED, PLAYER_POOL_SEED, SOL_VAULT_SEED, ADMIN1, ADMIN2, ADMIN3, MAX_OPEN_IN_GAME},
   error::GameError,
   state::{GlobalPool, BoxPool, PrizePool, PlayerPool, GameData}, processor::{sol_transfer_user, calc_reward, get_rand},
 };
@@ -90,6 +90,7 @@ pub fn open_box_handler<'info>(
   require!(ctx.accounts.admin2.key().to_string() == String::from(ADMIN2), GameError::InvalidAdminAddress);
   require!(ctx.accounts.admin3.key().to_string() == String::from(ADMIN3), GameError::InvalidAdminAddress);
   require!(1 <= open_times && open_times <= 3, GameError::OpenTimeExceed);
+  require!(player_pool.rewards.len() < MAX_OPEN_IN_GAME, GameError::OpenTimeExceed);
 
   msg!("Open box- player: {}, open times: {}", ctx.accounts.player.key(), open_times);
 
