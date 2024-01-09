@@ -13,10 +13,9 @@ declare_id!("t1ynC7jhTJfZD8idR58Yz6EW8XiwajKzNXusf2tguBV");
 
 #[program]
 pub mod looties_contract {
-
     use super::*;
 
-    pub fn initialize_admin(ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         initialize_handler(ctx)
     }
     
@@ -67,20 +66,32 @@ pub mod looties_contract {
         withdraw_nfts_handler(ctx, nfts)
     }
 
-    pub fn deposit(ctx: Context<Deposit>, sol_amount: u64, token_amount: u64) -> Result<()> {
-        deposit_handler(ctx, sol_amount, token_amount)
+    pub fn deposit_sol(ctx: Context<DepositSol>, sol_amount: u64) -> Result<()> {
+        deposit_sol_handler(ctx, sol_amount)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, sol_amount: u64, token_amount: u64) -> Result<()> {
-        withdraw_handler(ctx, sol_amount, token_amount)
+    pub fn withdraw_sol(ctx: Context<WithdrawSol>, sol_amount: u64) -> Result<()> {
+        withdraw_sol_handler(ctx, sol_amount)
+    }
+
+    pub fn deposit_token(ctx: Context<DepositToken>, token_amount: u64) -> Result<()> {
+        deposit_token_handler(ctx, token_amount)
+    }
+
+    pub fn withdraw_token(ctx: Context<WithdrawToken>, token_amount: u64) -> Result<()> {
+        withdraw_token_handler(ctx, token_amount)
     }
 
     pub fn open_box<'info>(ctx: Context<'_, '_, '_, 'info, OpenBox<'info>>, open_times: u16) -> Result<()> {
         open_box_handler(ctx, open_times)
     }
 
-    pub fn claim_reward<'info>(ctx: Context<'_, '_, '_, 'info, ClaimReward<'info>>) -> Result<()> {
-        claim_reward_handler(ctx)
+    pub fn claim_reward_token<'info>(ctx: Context<'_, '_, '_, 'info, ClaimRewardToken<'info>>) -> Result<()> {
+        claim_reward_token_handler(ctx)
+    }
+
+    pub fn claim_reward_nfts<'info>(ctx: Context<'_, '_, '_, 'info, ClaimRewardNfts<'info>>, nfts: Vec<Pubkey>) -> Result<()> {
+        claim_reward_nfts_handler(ctx, nfts)
     }
       
 }

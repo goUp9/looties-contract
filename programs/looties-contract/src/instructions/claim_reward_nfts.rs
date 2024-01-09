@@ -1,63 +1,53 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, self, Transfer};
 use crate::{
-  constants::{GLOBAL_AUTHORITY_SEED, PRIZE_POOL_SEED},
+  constants::{GLOBAL_AUTHORITY_SEED, PLAYER_POOL_SEED},
   error::GameError,
-  state::{GlobalPool, BoxPool, PrizePool},
+  state::{GlobalPool, PlayerPool},
 };
 
 #[derive(Accounts)]
-pub struct WithdrawNfts<'info> {
-  // Only admin can withdraw nfts
-  #[account(
-    mut,
-    constraint = box_pool.admin == *admin.key @ GameError::InvalidAdmin
-  )]
-  pub admin: Signer<'info>,
+pub struct ClaimRewardNfts<'info> {
+  #[account(mut)]
+  pub player: Signer<'info>,
 
   #[account(
     mut,
     seeds = [GLOBAL_AUTHORITY_SEED.as_ref()],
     bump,
   )]
-  pub global_pool: Account<'info, GlobalPool>,
-
-  #[account(mut)]
-  pub box_pool: Account<'info, BoxPool>,
+  pub global_pool: Box<Account<'info, GlobalPool>>,
 
   #[account(
     mut,
-    seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
+    seeds = [PLAYER_POOL_SEED.as_ref(), player.key().as_ref()],
     bump,
   )]
-  pub prize_pool: Account<'info, PrizePool>,
+  pub player_pool: Account<'info, PlayerPool>,
 
   // system
   pub token_program: Program<'info, Token>,
 }
 
 /**
- * Withdraw NFTs
- *
- * @param            - NFT list to withdraw
+ * Claim reward
  * 
- * @remainingAccount - NFT's ATA(global_pool's ATA, admin's ATA) list to withdraw
+ * @remainingAccounts - list of claimable NFT's ATA(global_pool's ATA, player's ATA)
  */
-pub fn withdraw_nfts_handler<'info>(
-  ctx: Context<'_, '_, '_, 'info, WithdrawNfts<'info>>,
-  nfts: Vec<Pubkey>
+pub fn claim_reward_nfts_handler<'info>(
+  ctx: Context<'_, '_, '_, 'info, ClaimRewardNfts<'info>>,
+  nfts: Vec<Pubkey>,
 ) -> Result<()> {
   let global_pool = &mut ctx.accounts.global_pool;
-  let prize_pool = &mut ctx.accounts.prize_pool;
-
-  //  Transfer NFTs to admin wallet
+  let player_pool = &mut ctx.accounts.player_pool;
   let remaining_accounts: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
 
-  require!(remaining_accounts.len() == nfts.len() * 2, GameError::RemainingAccountCountDismatch);
+  require!(remaining_accounts.len()== nfts.len() * 2, GameError::RemainingAccountCountDismatch);
 
-  let mut idx = 0;
+  for i in 0..nfts.len() {
+    let nft = nfts[i];
+    let idx = i * 2;
 
-  for nft in nfts {
     let src_ata = spl_associated_token_account::get_associated_token_address(
       &global_pool.key(),
       &nft,
@@ -68,7 +58,7 @@ pub fn withdraw_nfts_handler<'info>(
     );
 
     let dest_ata = spl_associated_token_account::get_associated_token_address(
-      &ctx.accounts.admin.key(),
+      &ctx.accounts.player.key(),
       &nft,
     );
     require!(
@@ -97,9 +87,7 @@ pub fn withdraw_nfts_handler<'info>(
       1,
     )?;
 
-    prize_pool.remove_nft(nft);
-
-    idx += 2;
+    player_pool.claimable_nfts.retain(|&x| x != nft);
   }
 
   Ok(())

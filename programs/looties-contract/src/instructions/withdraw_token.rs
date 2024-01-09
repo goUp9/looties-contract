@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{TokenAccount, Mint, Token, self, Transfer};
 use crate::{
-  constants::{GLOBAL_AUTHORITY_SEED, SOL_VAULT_SEED},
+  constants::GLOBAL_AUTHORITY_SEED,
   error::GameError,
-  state::{GlobalPool, BoxPool}, processor::sol_transfer_with_signer,
+  state::{GlobalPool, BoxPool}
 };
 
 #[derive(Accounts)]
-pub struct Withdraw<'info> {
+pub struct WithdrawToken<'info> {
   // Only admin can withdraw from Vault
   #[account(
     mut,
@@ -24,14 +24,6 @@ pub struct Withdraw<'info> {
 
   #[account(mut)]
   pub box_pool: Account<'info, BoxPool>,
-
-  #[account(
-    mut,
-    seeds = [SOL_VAULT_SEED.as_ref()],
-    bump,
-  )]
-  /// CHECK
-  pub sol_vault: AccountInfo<'info>,
 
   // Associated Token Account for admin which holds Token
   #[account(
@@ -55,41 +47,25 @@ pub struct Withdraw<'info> {
 }
 
 /**
- * Withdraw SOL/Token from PDA
+ * Withdraw Token from PDA
  *
- * @param - sol amount to withdraw
- *        - token amount to withdraw
+ * @param - token amount to withdraw
  */
-pub fn withdraw_handler(ctx: Context<Withdraw>, sol_amount: u64, token_amount: u64) -> Result<()> {
+pub fn withdraw_token_handler(ctx: Context<WithdrawToken>, token_amount: u64) -> Result<()> {
   let global_pool = &mut ctx.accounts.global_pool;
   let box_pool = &mut ctx.accounts.box_pool;
   msg!("Withdrawer: {}", ctx.accounts.admin.to_account_info().key());
   msg!(
-    "Asking to withdraw: {} SOL, {} Token {}",
-    sol_amount,
+    "Asking to withdraw: {} Token {}",
     token_amount,
     ctx.accounts.token_mint.key(),
   );
-
-  let sol_vault_bump = ctx.bumps.sol_vault;
 
   let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
     Some(id) => id,
     None => return err!(GameError::TokenAddressUnknown),
   };
-  require!(box_pool.sol_amount >= sol_amount, GameError::InsufficientFunds);
   require!(box_pool.token_amount[id] >= token_amount, GameError::InsufficientFunds);
-
-  if sol_amount > 0 {
-    sol_transfer_with_signer(
-      ctx.accounts.sol_vault.to_account_info(),
-      ctx.accounts.admin.to_account_info(),
-      ctx.accounts.system_program.to_account_info(),
-      &[&[SOL_VAULT_SEED.as_ref(), &[sol_vault_bump]]],
-      sol_amount,
-    )?;
-    box_pool.sol_amount -= sol_amount;
-  }
 
   if token_amount > 0 {
     //  Transfer Token to admin from PDA

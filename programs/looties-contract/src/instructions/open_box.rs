@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use crate::{
   constants::{GLOBAL_AUTHORITY_SEED, PRIZE_POOL_SEED, PLAYER_POOL_SEED, SOL_VAULT_SEED, ADMIN1, ADMIN2, ADMIN3},
   error::GameError,
-  state::{GlobalPool, BoxPool, PrizePool, PlayerPool}, processor::{sol_transfer_user, calc_reward, get_rand},
+  state::{GlobalPool, BoxPool, PrizePool, PlayerPool, GameData}, processor::{sol_transfer_user, calc_reward, get_rand},
 };
 
 #[derive(Accounts)]
@@ -138,22 +138,28 @@ pub fn open_box_handler<'info>(
     reward_idxs.push(calc_reward(&box_pool.rewards, rand as u16));
   }
 
-  player_pool.last_reward_idxs = reward_idxs.clone();
-  player_pool.box_addr = box_pool.key();
-  player_pool.open_times = open_times;
+  player_pool.rewards.push(GameData{
+    reward_idxs: reward_idxs.clone(),
+    box_addr: box_pool.key(),
+    open_times
+  });
 
   for i in 0..open_times as usize {
     let mut select = false;
-    let reward = &box_pool.rewards[reward_idxs[i] as usize];
+    let reward = box_pool.rewards[reward_idxs[i] as usize].clone();
 
     if reward.reward_type == 1 {
       player_pool.claimable_sol += reward.sol;
+      require!(box_pool.sol_amount >= reward.sol, GameError::InsufficientFunds);
+      box_pool.sol_amount -= reward.sol;
     }
     
     for j in 0..global_pool.token_count as usize {
       let token_address = global_pool.token_address[j];
       if token_address == reward.token_address && reward.reward_type == 2 {
         player_pool.claimable_token[j] += reward.token;
+        require!(box_pool.token_amount[j] >= reward.token, GameError::InsufficientFunds);
+        box_pool.token_amount[j] -= reward.token;
       }
     }
 

@@ -38,11 +38,11 @@ program = new anchor.Program(idl, programId);
 console.log('ProgramId: ', program.programId.toBase58());
 
 const main = async () => {
-    const [globalAuthority, bump] = await PublicKey.findProgramAddress(
-        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
-        program.programId
-    );
-    console.log('GlobalAuthority: ', globalAuthority.toBase58());
+    // const [globalAuthority, bump] = PublicKey.findProgramAddressSync(
+    //     [Buffer.from(GLOBAL_AUTHORITY_SEED)],
+    //     program.programId
+    // );
+    // console.log('GlobalAuthority: ', globalAuthority.toBase58());
     // super admin  : CPvqXDUJBwGDH9e2SadrQzFYqCaKiF2UXmxgqkcQdYTZ
     // admin        : 5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz
     // player       : Bw6cx4qzWygKDLtbThv8TxESxsUsEXmcv1X4gUPbSycc
@@ -63,8 +63,8 @@ const main = async () => {
     // await removeBox(boxPool2);
     // await deposit(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0 * 10 ** 6), tokenAAddress);
     // await withdraw(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0), tokenBAddress);
-    // console.log(await getBoxPool(boxPool2));
-    
+    console.log(await getBoxPool(boxPool1));
+
     // let nfts = [
     //     new anchor.web3.PublicKey("9ARBwxAsTtNiJv3UYjrvNvJH81HUvqCSd7TeThNiTmKi"),
     //     new anchor.web3.PublicKey("4TV9nj18LTdnaRrPweGR4ZAuo9FzyxYrSwoHtnA7p6ny"),
@@ -72,7 +72,7 @@ const main = async () => {
     
     // await depositNfts(boxPool2, NFTcollection, nfts);
     // await withdrawNfts(boxPool2, nfts);
-    // console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
+    console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
 
     
     // ===========> methods related to player pool < =========== //
@@ -275,7 +275,7 @@ const updateBoxTest = async (boxAddress: PublicKey) => {
 export const initProject = async () => {
     console.log('==>Initializing program');
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -306,7 +306,7 @@ export const changeSuperAdmin = async (
 ) => {
     console.log('==>changeSuperAdmin to : ', newSuperAdmin.toString());
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -314,10 +314,8 @@ export const changeSuperAdmin = async (
     let txId = await program.methods
         .changeSuperAdmin(newSuperAdmin)
         .accounts({
-            super_admin: authority,
+            superAdmin: authority,
             globalPool: globalAuthority,
-            systemProgram: SystemProgram.programId,
-            rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
 
@@ -336,7 +334,7 @@ export const addTokenAddress = async (
 ) => {
     console.log('==>addTokenAddress : ', tokenAddress.toString());
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -362,8 +360,6 @@ export const addTokenAddress = async (
         .accounts({
             super_admin: authority,
             globalPool: globalAuthority,
-            systemProgram: SystemProgram.programId,
-            rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
 
@@ -393,17 +389,17 @@ export const initBox = async (
     console.log('==>initBox : ');
     const _rand = Keypair.generate().publicKey;
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [boxAuthority, bBump] = await PublicKey.findProgramAddress(
+    const [boxAuthority, bBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(BOX_AUTHORITY_SEED), _rand.toBuffer()],
         program.programId
     );
 
-    const [prizeAuthority, pBump] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAuthority.toBuffer()],
         program.programId
     );
@@ -411,7 +407,7 @@ export const initBox = async (
     let txId = await program.methods
         .initBox(admin, name, description, imageUrl, priceInSol, rewards)
         .accounts({
-            authority,
+            superAdmin: authority,
             globalPool: globalAuthority,
             boxPool: boxAuthority,
             prizePool: prizeAuthority,
@@ -448,7 +444,7 @@ export const updateBox = async (
 ) => {
     console.log('==>updateBox : ', boxAddress.toString());
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -456,11 +452,9 @@ export const updateBox = async (
     let txId = await program.methods
         .updateBox(name, description, imageUrl, priceInSol, rewards)
         .accounts({
-            super_admin: authority,
+            superAdmin: authority,
             globalPool: globalAuthority,
             boxPool: boxAddress,
-            systemProgram: SystemProgram.programId,
-            rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
     
@@ -481,7 +475,7 @@ export const changeAdmin = async (
 ) => {
     console.log('==>changeAdmin : boxAddress: ', boxAddress.toString(), ' newAdmin: ', newAdmin.toString());
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -489,7 +483,7 @@ export const changeAdmin = async (
     let txId = await program.methods
         .changeAdmin(newAdmin)
         .accounts({
-            super_admin: authority,
+            superAdmin: authority,
             globalPool: globalAuthority,
             boxPool: boxAddress,
         })
@@ -510,12 +504,12 @@ export const removeBox = async (
 ) => {
     console.log('==>removeBox : boxAddress: ', boxAddress.toString());
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [prizeAuthority, pBump] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
@@ -523,7 +517,7 @@ export const removeBox = async (
     let txId = await program.methods
         .removeBox()
         .accounts({
-            super_admin: authority,
+            superAdmin: authority,
             globalPool: globalAuthority,
             boxPool: boxAddress,
             prizePool: prizeAuthority,
@@ -534,57 +528,111 @@ export const removeBox = async (
 }
 
 /**
- * Deposit Sol and Spl token
+ * Deposit Sol
  * 
  * @access  - super_admin, admin(admin for box)
  * 
  * @param   - boxAddress    : box address to deposit
  *          - solAmount     : Sol amount to deposit
- *          - tokenAmount   : Token amount to deposit
- *          - tokenAddress  : Token mint address to deposit
  */
-export const deposit = async (
+export const deposit_sol = async (
     boxAddress: PublicKey,
     solAmount: anchor.BN,
-    tokenAmount: anchor.BN,
-    tokenAddress: PublicKey,
 ) => {
-    console.log('==>deposit : SOL: ', solAmount, ' Token(', tokenAddress.toString(), '): ' , tokenAmount);
+    console.log('==>deposit : SOL: ', solAmount);
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
+    const [solVault, svBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(SOL_VAULT_SEED)],
         program.programId
     );
 
-    {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            authority,
-            authority,
-            [tokenAddress]
-        );
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
-        }
-    }
-
-    let adminTokenAccount = await getAssociatedTokenAccount(authority, tokenAddress);
-    let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
-
     let txId = await program.methods
-        .deposit(solAmount, tokenAmount)
+        .deposit_sol(solAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
             boxPool: boxAddress,
             solVault,
+            systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+    console.log("txHash =", txId);    
+}
+
+/**
+ * Withdraw Sol
+ * 
+ * @access  - admin(admin for box)
+ * 
+ * @param   - boxAddress    : box address to withdraw
+ *          - solAmount     : Sol amount to withdraw
+ */
+export const withdraw_sol = async (
+    boxAddress: PublicKey,
+    solAmount: anchor.BN,
+) => {
+    console.log('==>withdraw : SOL: ', solAmount);
+
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
+        program.programId
+    );
+
+    const [solVault, svBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from(SOL_VAULT_SEED)],
+        program.programId
+    );
+
+    let txId = await program.methods
+        .withdraw_sol(solAmount)
+        .accounts({
+            admin: authority,
+            globalPool: globalAuthority,
+            boxPool: boxAddress,
+            solVault,
+            systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+    console.log("txHash =", txId);    
+}
+
+/**
+ * Deposit Spl token
+ * 
+ * @access  - super_admin, admin(admin for box)
+ * 
+ * @param   - boxAddress    : box address to deposit
+ *          - tokenAmount   : Token amount to deposit
+ *          - tokenAddress  : Token mint address to deposit
+ */
+export const deposit_token = async (
+    boxAddress: PublicKey,
+    tokenAmount: anchor.BN,
+    tokenAddress: PublicKey,
+) => {
+    console.log('==>deposit : Token(', tokenAddress.toString(), '): ' , tokenAmount);
+
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from(GLOBAL_AUTHORITY_SEED)],
+        program.programId
+    );
+
+    let adminTokenAccount = await getAssociatedTokenAccount(authority, tokenAddress);
+    let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
+
+    let txId = await program.methods
+        .deposit_token(tokenAmount)
+        .accounts({
+            admin: authority,
+            globalPool: globalAuthority,
+            boxPool: boxAddress,
             tokenAdmin: adminTokenAccount,
             tokenVault: gameTokenAccount,
             tokenMint: tokenAddress,
@@ -597,30 +645,23 @@ export const deposit = async (
 }
 
 /**
- * Withdraw Sol and Spl token
+ * Withdraw Spl token
  * 
  * @access  - admin(admin for box)
  * 
  * @param   - boxAddress    : box address to withdraw
- *          - solAmount     : Sol amount to withdraw
  *          - tokenAmount   : Token amount to withdraw
  *          - tokenAddress  : Token mint address to withdraw
  */
-export const withdraw = async (
+export const withdraw_token = async (
     boxAddress: PublicKey,
-    solAmount: anchor.BN,
     tokenAmount: anchor.BN,
     tokenAddress: PublicKey,
 ) => {
-    console.log('==>withdraw : SOL: ', solAmount, ' Token(', tokenAddress.toString(), '): ' , tokenAmount);
+    console.log('==>withdraw : Token(', tokenAddress.toString(), '): ' , tokenAmount);
 
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
-        program.programId
-    );
-
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(SOL_VAULT_SEED)],
         program.programId
     );
 
@@ -642,12 +683,11 @@ export const withdraw = async (
     let gameTokenAccount = await getAssociatedTokenAccount(globalAuthority, tokenAddress);
 
     let txId = await program.methods
-        .withdraw(solAmount, tokenAmount)
+        .withdraw_token(tokenAmount)
         .accounts({
             admin: authority,
             globalPool: globalAuthority,
             boxPool: boxAddress,
-            solVault,
             tokenAdmin: adminTokenAccount,
             tokenVault: gameTokenAccount,
             tokenMint: tokenAddress,
@@ -666,7 +706,7 @@ export const withdraw = async (
  * 
  * @param   - boxAddress    : box address to deposit
  *          - collection    : collection NFT address
- *          - nfts          : NFT address into collection to deposit
+ *          - nfts          : NFT address into collection to deposit (up to 10 nfts)
  */
 export const depositNfts = async (
     boxAddress: PublicKey,
@@ -674,50 +714,70 @@ export const depositNfts = async (
     nfts: PublicKey[],
 ) => {
     console.log('==> deposit NFTs')
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [prizeAuthority, pBump] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
 
+    const nfts_array = [];
+    for (let i = 0; i < nfts.length; i += 5) {
+        nfts_array.push(nfts.slice(i, i + 5));
+    }
+
     {
-        let tx = new Transaction();
-        let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
-            solConnection,
-            authority,
-            globalAuthority,
-            nfts
-        );
-        if (instructions.length > 0) {
-            instructions.map((ix) => tx.add(ix));
-            await provider.sendAndConfirm(tx);
+        let txs = [];
+        for (let i = 0; i < nfts_array.length; i ++) {
+            let tx = new Transaction();
+            let { instructions, destinationAccounts } = await getATokenAccountsNeedCreate(
+                solConnection,
+                authority,
+                globalAuthority,
+                nfts_array[i]
+            );
+            if (instructions.length > 0) {
+                instructions.map((ix) => tx.add(ix));
+                txs.push({
+                    tx: tx,
+                });
+            }
+        }
+        if (txs.length > 0) {
+            await provider.sendAll(txs);
         }
     }
 
-    let remainingAccounts = [];
+    let txs = [];
+    for (let i = 0; i < nfts_array.length; i ++) {
+        let remainingAccounts = [];
 
-    for (var nft of nfts) {
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
-        remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
+        for (var nft of nfts_array[i]) {
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(authority, nft), isSigner: false, isWritable: true })
+            remainingAccounts.push({ pubkey: await getAssociatedTokenAccount(globalAuthority, nft), isSigner: false, isWritable: true })
+        }
+
+        let tx = await program.methods
+            .depositNfts(collection, nfts_array[i])
+            .accounts({
+                admin: authority,
+                globalPool: globalAuthority,
+                boxPool: boxAddress,
+                prizePool: prizeAuthority,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .remainingAccounts(remainingAccounts)
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
     }
 
-    let txId = await program.methods
-        .depositNfts(collection, nfts)
-        .accounts({
-            admin: authority,
-            globalPool: globalAuthority,
-            boxPool: boxAddress,
-            prizePool: prizeAuthority,
-            tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .remainingAccounts(remainingAccounts)
-        .rpc();
-
-    console.log("txHash =", txId);    
+    await provider.sendAll(txs);
 }
 
 /**
@@ -726,19 +786,19 @@ export const depositNfts = async (
  * @access  - admin(admin for box)
  * 
  * @param   - boxAddress    : box address to withdraw
- *          - nfts          : NFT address into collection to withdraw
+ *          - nfts          : NFT address into collection to withdraw (up to 10)
  */
 export const withdrawNfts = async (
     boxAddress: PublicKey,
     nfts: PublicKey[],
 ) => {
     console.log('==> withdraw NFTs');
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [prizeAuthority, pBump] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
@@ -780,32 +840,6 @@ export const withdrawNfts = async (
 }
 
 /**
- * Initialize player pool
- * 
- * @access  - player
- */
-export const initPlayer = async () => {
-    console.log('==> initPlayer : ', authority.toString());
-
-    const [playerAuthority, pBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
-        program.programId
-    );
-
-    let txId = await program.methods
-        .initPlayer()
-        .accounts({
-            player: authority,
-            playerPool: playerAuthority,
-            systemProgram: SystemProgram.programId,
-            rent: SYSVAR_RENT_PUBKEY,
-        })
-        .rpc();
-
-    console.log("txHash =", txId);    
-}
-
-/**
  * Open box
  * 
  * @access  - player
@@ -817,22 +851,22 @@ export const openBox = async (
     boxAddress: PublicKey,
     openTimes: number,
 ) => {
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
+    const [solVault, svBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(SOL_VAULT_SEED)],
         program.programId
     );
 
-    const [prizeAuthority, pBump1] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump1] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAddress.toBuffer()],
         program.programId
     );
 
-    const [playerAuthority, pBump2] = await PublicKey.findProgramAddress(
+    const [playerAuthority, pBump2] = PublicKey.findProgramAddressSync(
         [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
         program.programId
     );
@@ -856,24 +890,23 @@ export const openBox = async (
     console.log("txHash =", txId);    
 }
 
-
 /**
- * Open box
+ * Claim Reward
  * 
  * @access  - player
  */
 export const claimReward = async () => {
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    const [solVault, svBump] = await PublicKey.findProgramAddress(
+    const [solVault, svBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(SOL_VAULT_SEED)],
         program.programId
     );
 
-    const [playerAuthority, pBump2] = await PublicKey.findProgramAddress(
+    const [playerAuthority, pBump2] = PublicKey.findProgramAddressSync(
         [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
         program.programId
     );
@@ -884,7 +917,7 @@ export const claimReward = async () => {
     console.log(playerPool)
     console.log(playerPool.boxAddr);
 
-    const [prizeAuthority, pBump1] = await PublicKey.findProgramAddress(
+    const [prizeAuthority, pBump1] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), playerPool.boxAddr.toBuffer()],
         program.programId
     );
@@ -933,7 +966,7 @@ export const claimReward = async () => {
 }
 
 export const getGlobalPool = async (): Promise<GlobalPool | null> => {
-    const [globalAuthority, gBump] = await PublicKey.findProgramAddress(
+    const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
@@ -954,7 +987,7 @@ export const getBoxPool = async (boxAddress): Promise<BoxPool | null> => {
 }
 
 export const getPlayerPool = async (): Promise<PlayerPool | null> => {
-    const [playerAuthority, pBump] = await PublicKey.findProgramAddress(
+    const [playerAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PLAYER_POOL_SEED), authority.toBuffer()],
         program.programId
     );
@@ -1057,14 +1090,14 @@ export const createAssociatedTokenAccountInstruction = (
 }
 
 const getAssociatedTokenAccount = async (ownerPubkey: PublicKey, mintPk: PublicKey): Promise<PublicKey> => {
-    let associatedTokenAccountPubkey = (await PublicKey.findProgramAddress(
+    let associatedTokenAccountPubkey = PublicKey.findProgramAddressSync(
         [
             ownerPubkey.toBuffer(),
             TOKEN_PROGRAM_ID.toBuffer(),
             mintPk.toBuffer(), // mint address
         ],
         ASSOCIATED_TOKEN_PROGRAM_ID
-    ))[0];
+    )[0];
     return associatedTokenAccountPubkey;
 }
 

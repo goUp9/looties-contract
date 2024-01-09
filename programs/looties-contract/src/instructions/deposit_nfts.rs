@@ -58,6 +58,7 @@ pub fn deposit_nfts_handler<'info>(
   let len = mint_addr.len();
   require!(remaining_accounts.len() == len * 2, GameError::RemainingAccountCountDismatch);
   require!(box_pool.rewards.iter().any(|reward| reward.reward_type == 3 && reward.collection_address == collection_addr), GameError::CollectionAddressNotExsit);
+  prize_pool.nfts.retain(|nft| nft.rewarded == false);
 
   //  Transfer NFTs to program ATA
   let mut idx = 0;

@@ -22,13 +22,17 @@ pub struct RemoveBox<'info> {
   )]
   pub global_pool: Account<'info, GlobalPool>,
 
-  #[account(mut)]
+  #[account(
+    mut,
+    close = super_admin,
+  )]
   pub box_pool: Account<'info, BoxPool>,
 
   #[account(
     mut,
     seeds = [PRIZE_POOL_SEED.as_ref(), box_pool.key().as_ref()],
     bump,
+    close = super_admin,
   )]
   pub prize_pool: Account<'info, PrizePool>,
 }

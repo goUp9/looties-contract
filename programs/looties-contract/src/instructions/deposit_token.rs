@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer, TokenAccount, Mint, Token};
 use crate::{
-  constants::{GLOBAL_AUTHORITY_SEED, SOL_VAULT_SEED},
+  constants::GLOBAL_AUTHORITY_SEED,
   error::GameError,
-  state::{GlobalPool, BoxPool}, processor::sol_transfer_user,
+  state::{GlobalPool, BoxPool},
 };
 
 #[derive(Accounts)]
-pub struct Deposit<'info> {
+pub struct DepositToken<'info> {
   // Only admin can deposit to Vault
   #[account(
     mut,
@@ -24,14 +24,6 @@ pub struct Deposit<'info> {
 
   #[account(mut)]
   pub box_pool: Account<'info, BoxPool>,
-
-  #[account(
-    mut,
-    seeds = [SOL_VAULT_SEED.as_ref()],
-    bump,
-  )]
-  /// CHECK
-  pub sol_vault: AccountInfo<'info>,
 
   // Associated Token Account for admin which holds Token
   #[account(
@@ -54,33 +46,21 @@ pub struct Deposit<'info> {
   pub system_program: Program<'info, System>,
 }
 
-
 /**
- * Deposit SOL/Token to PDA
+ * Deposit Token to PDA
  *
- * @param - sol amount to deposit
- *        - token amount to deposit
+ * @param - token amount to deposit
  */
-pub fn deposit_handler(ctx: Context<Deposit>, sol_amount: u64, token_amount: u64) -> Result<()> {
+pub fn deposit_token_handler(ctx: Context<DepositToken>, token_amount: u64) -> Result<()> {
   let global_pool = &mut ctx.accounts.global_pool;
   let box_pool = &mut ctx.accounts.box_pool;
 
   msg!("Depositer: {}", ctx.accounts.admin.to_account_info().key());
   msg!(
-    "Asking to deposit: {} SOL, {} Token {}",
-    sol_amount,
+    "Asking to deposit: {} Token {}",
     token_amount,
     ctx.accounts.token_mint.key(),
   );
-  if sol_amount > 0 {
-    sol_transfer_user(
-      ctx.accounts.admin.to_account_info(),
-      ctx.accounts.sol_vault.to_account_info(),
-      ctx.accounts.system_program.to_account_info(),
-      sol_amount,
-    )?;
-    box_pool.sol_amount += sol_amount;
-  }
 
   if token_amount > 0 {
     let id = match global_pool.token_address.iter().position(|&token_mint| token_mint == ctx.accounts.token_mint.key()) {
