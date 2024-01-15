@@ -1,20 +1,22 @@
 use anchor_lang::prelude::*;
 use crate::constants::*;
 
+// 924 + 4 + 735 * 10 = 8246
 #[account]
 #[derive(InitSpace, Default)]
 pub struct BoxPool {
     pub admin: Pubkey,                              // 32
+    pub rand_key: Pubkey,                           // 32
 
     pub sol_amount: u64,                            // 8
     pub token_amount: [u64; MAX_TOKEN_IN_GAME],     // 8 * 20
 
     #[max_len(MAX_NAME_LENGTH)]
-    pub name: String,                               // 4 + 25
+    pub name: String,                               // 4 + 128
     #[max_len(MAX_DESCRIPTION_LENGTH)]
-    pub description: String,                        // 4 + 100
+    pub description: String,                        // 4 + 256
     #[max_len(MAX_IMAGE_URL_LENGTH)]
-    pub image_url: String,                          // 4 + 100
+    pub image_url: String,                          // 4 + 256
     pub price_in_sol: u64,                          // 8
 
     pub prizes: Pubkey,                             // 32
@@ -23,14 +25,15 @@ pub struct BoxPool {
     pub rewards: Vec<Reward>,                       // 4 + ___ * 20
 }
 
+// 735
 #[derive(InitSpace, Default, AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct Reward {
     #[max_len(MAX_NAME_LENGTH)]
-    pub name: String,                       // 4 + 25
-    #[max_len(MAX_DESCRIPTION_LENGTH)]      // 4 + 100
+    pub name: String,                       // 4 + 128
+    #[max_len(MAX_DESCRIPTION_LENGTH)]      // 4 + 256
     pub description: String,
     #[max_len(MAX_IMAGE_URL_LENGTH)]
-    pub image_url: String,                  // 4 + 100
+    pub image_url: String,                  // 4 + 256
 
     // 1: SOL, 2: SPL, 3: NFT.
     pub reward_type: u8,                    // 1

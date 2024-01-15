@@ -84,4 +84,13 @@ pub enum GameError {
     /// Invalid Authority
     #[msg("Invalid Authority")]
     InvalidAuthority,
+    /// Exceed Max Name Length
+    #[msg("Exceed Max Name Length")]
+    ExceedMaxNameLength,
+    /// Exceed Max Description Length
+    #[msg("Exceed Max Description Length")]
+    ExceedMaxDescriptionLength,
+    /// Exceed Max ImageUrl Length
+    #[msg("Exceed MaxImageUrl Length")]
+    ExceedMaxImageUrlLength,
 }

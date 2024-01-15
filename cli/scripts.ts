@@ -11,6 +11,13 @@ const GLOBAL_AUTHORITY_SEED = "global-authority";
 const PRIZE_POOL_SEED = "prize-pool";
 const PLAYER_POOL_SEED = "player-pool-2";
 const SOL_VAULT_SEED = "sol-vault";
+const TEMP_BOX_SEED = "temp-box-2";
+
+const MAX_REWARD_IN_BOX = 10;
+const MAX_NAME_LENGTH = 128;
+const MAX_DESCRIPTION_LENGTH = 256;
+const MAX_IMAGE_URL_LENGTH = 256;
+const CHANCE_SUM = 10000;
 
 anchor.setProvider(anchor.AnchorProvider.local(web3.clusterApiUrl('devnet')));
 const solConnection = anchor.getProvider().connection;
@@ -53,19 +60,22 @@ const main = async () => {
     // await addTokenAddress(tokenAAddress);
     console.log(await getGlobalPool());
     
-    let boxPool1 = new web3.PublicKey("BMPS7jTJ9uyTU8bmnjFbMFXmX3bkvQ5y65bfhNAQGVC4");
-    let boxPool2 = new web3.PublicKey("CkEte9nktCbyLqEVjzgJZYFWABLAACYLh77WYJKLhxZk");
+    let boxPool1 = new web3.PublicKey("2gdf8D4PTkGXXzWxTC3bVNVT5ZB3AUrRr3qpkbjJ52Hc");
+    let boxPool2 = new web3.PublicKey("Sh1Moqp4R5H4eypH3i47ta6DHRhjQ9hbdghG3bAtRe3");
+    let boxPool3 = new web3.PublicKey("5g6MDvFAPTEdGRB4w4PGCbSR8fq7V3gcakEYz22wFX5M");
+    let boxPool4 = new web3.PublicKey("EAktPUSdMpT22bnuyS7nUaoNBLWUwCeaecNP8YmHcooG");
 
     // ===========> methods related to box pool < =========== //
     // await initBoxTest();
-    // await updateBoxTest(boxPool1);
+    // await updateBoxTest(boxPool2);
     // await changeAdmin(boxPool2, new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"))
-    // await removeBox(boxPool1);
     // await deposit(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0 * 10 ** 6), tokenAAddress);
     // await withdraw(boxPool2, new anchor.BN(10 ** 9), new anchor.BN(0), tokenBAddress);
     // await deposit_sol(boxPool2, new anchor.BN(4853600000));
-    // await deposit_token(boxPool2, new anchor.BN(997000), tokenAAddress);
-    // await deposit_token(boxPool2, new anchor.BN(993000), tokenBAddress);
+    // await deposit_sol(boxPool1, new anchor.BN(5000000000));
+    // await deposit_token(boxPool1, new anchor.BN(1000000), tokenAAddress);
+    // await deposit_sol(boxPool2, new anchor.BN(5000000000));
+    // await deposit_token(boxPool2, new anchor.BN(1000000), tokenAAddress);
     // console.log(await getBoxPool(boxPool2));
 
     let nfts = [
@@ -84,7 +94,7 @@ const main = async () => {
     
     // await depositNfts(boxPool2, NFTcollection, nfts);
     // await withdrawNfts(boxPool2, nfts);
-    // console.log(await getPrizePool((await getBoxPool(boxPool2)).prizes));
+    // console.log(await getPrizePool((await getBoxPool(boxPool1)).prizes));
     
     // ===========> methods related to player pool < =========== //
 
@@ -113,171 +123,230 @@ const initBoxTest = async () => {
 
     let rewards = [
         {
-            name: "Hell Case",
-            description: "Hell Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
-            rewardType: 1,
-            chance: 15 * 10 ** 2,
-            sol: new anchor.BN(0.5 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "0.5 SOL",
+          description: "Solana - 0.5",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 9 * 10 ** 2,
+          sol: new anchor.BN(0.5 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Sussy Case",
-            description: "Sussy Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
-            rewardType: 1,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(0.69 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "0.05 SOL",
+          description: "Solana - 0.05",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 50 * 10 ** 2,
+          sol: new anchor.BN(0.05 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Mask Case",
-            description: "Mask Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
-            rewardType: 1,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0.05 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "1 SOL",
+          description: "Solana",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 1 * 10 ** 2,
+          sol: new anchor.BN(1 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Rio Case 2022",
-            description: "Rio Case 2022",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
-            rewardType: 1,
-            chance: 45 * 10 ** 2,
-            sol: new anchor.BN(0.05 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "1000 TokenA",
+          description: "1000 TokenA",
+          imageUrl: "https://moon.ly/blog/content/images/2023/01/kinderjaje_create_an_image_of_shiba_inu_dog_breed_inside_of_cry_8ba4523c-ba83-4675-a1a4-46af09a24eb0.png",
+          rewardType: 2,
+          chance: 16 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(1000),
+          tokenAddress: tokenAAddress,
+          collectionAddress: defaultKey,
         },
-    ]
+        {
+          name: "250 TokenA",
+          description: "250 TokenA",
+          imageUrl: "https://moon.ly/blog/content/images/2023/01/kinderjaje_create_an_image_of_shiba_inu_dog_breed_inside_of_cry_8ba4523c-ba83-4675-a1a4-46af09a24eb0.png",
+          rewardType: 2,
+          chance: 9 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(1000),
+          tokenAddress: tokenAAddress,
+          collectionAddress: defaultKey,
+        },
+        {
+          name: "Example NFT",
+          description: "Example NFT",
+          imageUrl: "https://www.forbes.com/advisor/wp-content/uploads/2022/08/bored_ape_yacht_club.jpeg-1.jpg",
+          rewardType: 3,
+          chance: 15 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: NFTcollection,
+        },
+    ];
 
+    // [
+    //     {
+    //       "name": "Solana Case",
+    //       "priceInSol": 0.5,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FSolana.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "AION",
+    //       "priceInSol": 0.69,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FAion.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "BONK",
+    //       "priceInSol": 0.05,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FBonk.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "50/50",
+    //       "priceInSol": 0.15,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2F50-50.png&w=256&q=75"
+    //     }
+    //   ]
+    
     await initBox(
         new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
-        "Radioactive Case",
-        "Radioactive Case",
-        "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
+        "Solana Case",
+        "Solana Case",
+        "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FSolana.png&w=256&q=75", new anchor.BN(0.5 * 10 ** 9),
         rewards,
     );
-
-    let rewards_2 = [
-        {
-            name: "0.005 SOL",
-            description: "0.005 SOL",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
-            rewardType: 1,
-            chance: 25 * 10 ** 2,
-            sol: new anchor.BN(5 * 10 ** 6),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "1000 TokenA",
-            description: "1000 TokenA",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
-            rewardType: 2,
-            chance: 25 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(1000),
-            tokenAddress: tokenAAddress,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "1000 TokenB",
-            description: "1000 TokenB",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
-            rewardType: 2,
-            chance: 25 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(1000),
-            tokenAddress: tokenBAddress,
-            collectionAddress: defaultKey,
-        },
-        {
-            name: "NFT",
-            description: "NFT",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
-            rewardType: 3,
-            chance: 25 * 10 ** 2,
-            sol: new anchor.BN(0),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: NFTcollection,
-        },
-    ]
-
+    
     await initBox(
         new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
-        "Complex Case",
-        "Complex Case",
-        "https://looties-next-app.vercel.app/assets/cases/case-1.svg", new anchor.BN(0.11 * 10 ** 9),
-        rewards_2,
+        "AION",
+        "AION",
+        "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FAion.png&w=256&q=75", new anchor.BN(0.15 * 10 ** 9),
+        rewards,
+    );
+    
+    await initBox(
+        new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
+        "BONK",
+        "BONK",
+        "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FBonk.png&w=256&q=75", new anchor.BN(0.05 * 10 ** 9),
+        rewards,
+    );
+    
+    await initBox(
+        new anchor.web3.PublicKey("5RoELXPzGfPFJ8DqHXX6QmgLguYERWfptPC3SUkwCBGz"),
+        "50/50",
+        "50/50",
+        "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2F50-50.png&w=256&q=75", new anchor.BN(0.15 * 10 ** 9),
+        rewards,
     );
 }
 
 const updateBoxTest = async (boxAddress: PublicKey) => {
     let defaultKey = PublicKey.default;
 
-    let rewards_2 = [
+    let rewards = [
         {
-            name: "Hell Case",
-            description: "Hell Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-1.svg",
-            rewardType: 1,
-            chance: 15 * 10 ** 2,
-            sol: new anchor.BN(0.5 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "0.5 SOL",
+          description: "Solana - 0.5",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 9 * 10 ** 2,
+          sol: new anchor.BN(0.5 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Sussy Case",
-            description: "Sussy Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-2.svg",
-            rewardType: 1,
-            chance: 10 * 10 ** 2,
-            sol: new anchor.BN(0.69 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "0.05 SOL",
+          description: "Solana - 0.05",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 50 * 10 ** 2,
+          sol: new anchor.BN(0.05 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Mask Case",
-            description: "Mask Case",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-3.svg",
-            rewardType: 1,
-            chance: 30 * 10 ** 2,
-            sol: new anchor.BN(0.05 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "1 SOL",
+          description: "Solana",
+          imageUrl: "https://public.bnbstatic.com/static/academy/uploads-original/2dde1146856049b0825c1bae268762c8.png",
+          rewardType: 1,
+          chance: 1 * 10 ** 2,
+          sol: new anchor.BN(1 * 10 ** 9),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: defaultKey,
         },
         {
-            name: "Rio Case 2022",
-            description: "Rio Case 2022",
-            imageUrl: "https://looties-next-app.vercel.app/assets/cases/case-4.svg",
-            rewardType: 1,
-            chance: 45 * 10 ** 2,
-            sol: new anchor.BN(0.05 * 10 ** 9),
-            token: new anchor.BN(0),
-            tokenAddress: defaultKey,
-            collectionAddress: defaultKey,
+          name: "1000 TokenA",
+          description: "1000 TokenA",
+          imageUrl: "https://moon.ly/blog/content/images/2023/01/kinderjaje_create_an_image_of_shiba_inu_dog_breed_inside_of_cry_8ba4523c-ba83-4675-a1a4-46af09a24eb0.png",
+          rewardType: 2,
+          chance: 16 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(1000),
+          tokenAddress: tokenAAddress,
+          collectionAddress: defaultKey,
         },
-    ]
+        {
+          name: "250 TokenA",
+          description: "250 TokenA",
+          imageUrl: "https://moon.ly/blog/content/images/2023/01/kinderjaje_create_an_image_of_shiba_inu_dog_breed_inside_of_cry_8ba4523c-ba83-4675-a1a4-46af09a24eb0.png",
+          rewardType: 2,
+          chance: 9 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(1000),
+          tokenAddress: tokenAAddress,
+          collectionAddress: defaultKey,
+        },
+        {
+          name: "Example NFT",
+          description: "Example NFT",
+          imageUrl: "https://www.forbes.com/advisor/wp-content/uploads/2022/08/bored_ape_yacht_club.jpeg-1.jpg",
+          rewardType: 3,
+          chance: 15 * 10 ** 2,
+          sol: new anchor.BN(0),
+          token: new anchor.BN(0),
+          tokenAddress: defaultKey,
+          collectionAddress: NFTcollection,
+        },
+    ];
 
+    // [
+    //     {
+    //       "name": "Solana Case",
+    //       "priceInSol": 0.5,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FSolana.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "AION",
+    //       "priceInSol": 0.69,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FAion.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "BONK",
+    //       "priceInSol": 0.05,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FBonk.png&w=256&q=75"
+    //     },
+    //     {
+    //       "name": "50/50",
+    //       "priceInSol": 0.15,
+    //       "image": "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2F50-50.png&w=256&q=75"
+    //     }
+    //   ]
+    
     await updateBox(
         boxAddress,
-        "Radioactive Case",
-        "Radioactive Case",
-        "https://looties-next-app.vercel.app/sample-case.svg", new anchor.BN(0.11 * 10 ** 9),
-        rewards_2,
+        "AION",
+        "AION",
+        "https://looties-next-app.vercel.app/_next/image?url=%2Fassets%2Fcases%2FAion.png&w=256&q=75", new anchor.BN(0.69 * 10 ** 9),
+        rewards,
     );
 }
 
@@ -405,6 +474,27 @@ export const initBox = async (
     rewards: Reward[],
 ) => {
     console.log('==>initBox : ');
+    if (
+        name.length > MAX_NAME_LENGTH ||
+        description.length > MAX_DESCRIPTION_LENGTH ||
+        imageUrl.length > MAX_IMAGE_URL_LENGTH ||
+        rewards.length > MAX_REWARD_IN_BOX
+    ) {
+        return;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < rewards.length; i ++) {
+        sum += rewards[i].chance;
+        if (rewards[i].rewardType != 1 && rewards[i].rewardType != 2 && rewards[i].rewardType != 3) return;
+        if (
+            rewards[i].name.length > MAX_NAME_LENGTH ||
+            rewards[i].description.length > MAX_DESCRIPTION_LENGTH ||
+            rewards[i].imageUrl.length > MAX_IMAGE_URL_LENGTH
+        ) return;
+    }
+    if (sum != CHANCE_SUM) return;
+
     const _rand = Keypair.generate().publicKey;
 
     const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
@@ -417,27 +507,79 @@ export const initBox = async (
         program.programId
     );
 
+    const [tempBoxAuthority, bBump2] = PublicKey.findProgramAddressSync(
+        [Buffer.from(BOX_AUTHORITY_SEED), Buffer.from(TEMP_BOX_SEED)],
+        program.programId
+    );
+
     const [prizeAuthority, pBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(PRIZE_POOL_SEED), boxAuthority.toBuffer()],
         program.programId
     );
 
-    let txId = await program.methods
-        .initBox(admin, name, description, imageUrl, priceInSol, rewards)
-        .accounts({
-            superAdmin: authority,
-            globalPool: globalAuthority,
-            boxPool: boxAuthority,
-            prizePool: prizeAuthority,
-            randKey: _rand,
-            systemProgram: SystemProgram.programId,
-            rent: SYSVAR_RENT_PUBKEY,
-        })
-        .rpc();
+    let txs = [];
+    
+    // Init temp box tx
+    {
+        let tx = await program.methods
+            .initTempBox(admin, name, description, imageUrl, priceInSol)
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                boxPool: tempBoxAuthority,
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
+
+    // Add rewards to temp box txs
+    for (let i = 0; i < rewards.length; i ++) {
+
+        let tx = await program.methods
+            .addRewardToTempBox(rewards[i])
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                boxPool: tempBoxAuthority,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
+
+    // Init box tx
+    {
+        let tx = await program.methods
+            .initBox()
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                tempBoxPool: tempBoxAuthority,
+                boxPool: boxAuthority,
+                prizePool: prizeAuthority,
+                randKey: _rand,
+                systemProgram: SystemProgram.programId,
+                rent: SYSVAR_RENT_PUBKEY,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
 
     console.log('added new box: address: ', boxAuthority.toString(), ' admin: ', admin.toString());
-    
-    console.log("txHash =", txId);    
+
+    let txIds = await provider.sendAll(txs).catch((error) => console.log(error));
+
+    console.log("txIds: ", txIds);
 }
 
 /**
@@ -460,23 +602,99 @@ export const updateBox = async (
     priceInSol: anchor.BN,
     rewards: Reward[],
 ) => {
-    console.log('==>updateBox : ', boxAddress.toString());
+    console.log('==>updateBox : ');
+    if (
+        name.length > MAX_NAME_LENGTH ||
+        description.length > MAX_DESCRIPTION_LENGTH ||
+        imageUrl.length > MAX_IMAGE_URL_LENGTH ||
+        rewards.length > MAX_REWARD_IN_BOX
+    ) {
+        return;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < rewards.length; i ++) {
+        sum += rewards[i].chance;
+        if (rewards[i].rewardType != 1 && rewards[i].rewardType != 2 && rewards[i].rewardType != 3) return;
+        if (
+            rewards[i].name.length > MAX_NAME_LENGTH ||
+            rewards[i].description.length > MAX_DESCRIPTION_LENGTH ||
+            rewards[i].imageUrl.length > MAX_IMAGE_URL_LENGTH
+        ) return;
+    }
+    if (sum != CHANCE_SUM) return;
 
     const [globalAuthority, gBump] = PublicKey.findProgramAddressSync(
         [Buffer.from(GLOBAL_AUTHORITY_SEED)],
         program.programId
     );
 
-    let txId = await program.methods
-        .updateBox(name, description, imageUrl, priceInSol, rewards)
-        .accounts({
-            superAdmin: authority,
-            globalPool: globalAuthority,
-            boxPool: boxAddress,
-        })
-        .rpc();
+    const [tempBoxAuthority, bBump2] = PublicKey.findProgramAddressSync(
+        [Buffer.from(BOX_AUTHORITY_SEED), Buffer.from(TEMP_BOX_SEED)],
+        program.programId
+    );
+
+    let txs = [];
     
-    console.log("txHash =", txId);    
+    // Init temp box tx
+    {
+        let tx = await program.methods
+            .initTempBox(PublicKey.default, name, description, imageUrl, priceInSol)
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                boxPool: tempBoxAuthority,
+                systemProgram: SystemProgram.programId,
+                tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
+
+    // Add rewards to temp box txs
+    for (let i = 0; i < rewards.length; i ++) {
+
+        let tx = await program.methods
+            .addRewardToTempBox(rewards[i])
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                boxPool: tempBoxAuthority,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
+
+    // Init box tx
+    {
+        let tx = await program.methods
+            .updateBox()
+            .accounts({
+                superAdmin: authority,
+                globalPool: globalAuthority,
+                tempBoxPool: tempBoxAuthority,
+                boxPool: boxAddress,
+                systemProgram: SystemProgram.programId,
+                rent: SYSVAR_RENT_PUBKEY,
+            })
+            .transaction();
+
+        txs.push({
+            tx: tx,
+        });
+    }
+
+    console.log('update box: address: ', boxAddress.toString());
+
+    let txIds = await provider.sendAll(txs).catch((error) => console.log(error));
+
+    console.log("txIds: ", txIds);
 }
 
 /**

@@ -11,6 +11,7 @@ export interface GlobalPool {
 
 export interface BoxPool {
     admin: PublicKey,
+    randKey: PublicKey,
     solAmount: anchor.BN,
     tokenAmount: anchor.BN,
     name: String,

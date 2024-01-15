@@ -31,27 +31,27 @@ pub mod looties_contract {
         change_admin_handler(ctx, new_admin)
     }
     
-    pub fn init_box<'info>(
-        ctx: Context<'_, '_, '_, 'info, InitBox<'info>>,
+    pub fn init_temp_box<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitTempBox<'info>>,
         admin: Pubkey,
         name: String,
         description: String,
         image_url: String,
         price_in_sol: u64,
-        rewards: Vec<Reward>,
     ) -> Result<()> {
-        init_box_handler(ctx, admin, name, description, image_url, price_in_sol, rewards)
+        init_temp_box_handler(ctx, admin, name, description, image_url, price_in_sol)
     }
 
-    pub fn update_box<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpdateBox<'info>>,
-        name: String,
-        description: String,
-        image_url: String,
-        price_in_sol: u64,
-        rewards: Vec<Reward>,
-    ) -> Result<()> {
-        update_box_handler(ctx, name, description, image_url, price_in_sol, rewards)
+    pub fn add_reward_to_temp_box<'info>(ctx: Context<'_, '_, '_, 'info, AddRewardToTempBox<'info>>, reward: Reward) -> Result<()> {
+        add_reward_to_temp_box_handler(ctx, reward)
+    }
+
+    pub fn init_box<'info>(ctx: Context<'_, '_, '_, 'info, InitBox<'info>>) -> Result<()> {
+        init_box_handler(ctx)
+    }
+
+    pub fn update_box<'info>(ctx: Context<'_, '_, '_, 'info, UpdateBox<'info>>) -> Result<()> {
+        update_box_handler(ctx)
     }
 
     pub fn remove_box<'info>(ctx: Context<'_, '_, '_, 'info, RemoveBox<'info>>) -> Result<()> {
